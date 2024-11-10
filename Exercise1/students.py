@@ -9,8 +9,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import roc_auc_score
-
+from sklearn.metrics import roc_auc_score, f1_score, recall_score, precision_score, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
 
 # Load dataset
@@ -49,13 +50,15 @@ categorical_pipe = make_pipeline(OneHotEncoder(sparse_output=False, handle_unkno
 transformer = ColumnTransformer(
     transformers=[
         ("scale", scale_pipe, colnames_continuous),
-        ("log_transform", log_pipe, colnames_continuous),
+        #("log_transform", log_pipe, colnames_continuous[13]),
         ("one_hot_encode", categorical_pipe, colnames_categorical),
     ]
 )
 
 
 knn_pipe = Pipeline([("prep", transformer), ("knn", KNeighborsClassifier())])
+random_forest_pipe = Pipeline([("prep", transformer), ("random_forest", RandomForestClassifier(random_state=1))])
+mlp_pipe = Pipeline([("prep", transformer), ("mlp", MLPClassifier(random_state=1))])
 
 
 # Encode the target
@@ -63,8 +66,86 @@ le = LabelEncoder()
 y_train = le.fit_transform(y_train.values.ravel())
 y_test = le.transform(y_test.values.ravel())
 
-# Fit/predict/score
-_ = knn_pipe.fit(X_train, y_train)
-preds = knn_pipe.predict_proba(X_test)
 
-print(roc_auc_score(y_test, preds, multi_class="ovr"))
+#-------------------------------------------------------------------------------
+# Exploration part for transforming numerical data
+
+# transforming_pipeline = Pipeline([("prep", transformer)])
+# transforming_pipeline.fit(X_train, y_train)
+
+# apply the pipeline to the training and test data
+# X_train_ = transforming_pipeline.transform(X_train)
+
+# get pipeline feature names
+# print(transforming_pipeline.get_feature_names_out())
+
+# fig = plt.figure(figsize=(30,30))
+# titles = transforming_pipeline.get_feature_names_out()
+
+# # Take length of columns for count i.e. shape[1]
+# for count in range(X_train_.shape[1]):
+
+#     plt.subplot(6, 6, count+1)
+#     # plt.title(titles[count])
+
+#     plt.hist(X_train_[count])
+
+## Since setting the title makes the plot less understandable, 
+## simply print the titles to connect each plot 
+# print(titles)
+
+## The conclusion of investigating the subplots is, that a log-transformer is not
+## a good choice afterwards since several distributions have a normal distribution
+## after the StandardScaler and after the log transformation it is not normally
+## distributed anymore
+
+# Also the x-axes value do not improve after log transformation
+
+## Only the 14. plot showed a typical improvement of the log transformation
+## print(colnames_continuous[13)
+## which is the column 'inflation rate' and therefore stays as the only column to be log transformed
+## TODO Since log-transforming results in an not well-known error, this improvement is post-poned
+
+# plt.show()
+
+#-------------------------------------------------------------------------------
+
+
+# Fit and predict knn
+knn_pipe.fit(X_train, y_train)
+predict_proba = knn_pipe.predict_proba(X_test)
+predictions = knn_pipe.predict(X_test)
+print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba, multi_class="ovr"))
+print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
+print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
+print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
+print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
+print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
+print("ACCURACY:", accuracy_score(y_test, predictions))
+
+random_forest_pipe.fit(X_train, y_train)
+predict_proba = random_forest_pipe.predict_proba(X_test)
+predictions = random_forest_pipe.predict(X_test)
+print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba, multi_class="ovr"))
+print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
+print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
+print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
+print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
+print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
+print("ACCURACY:", accuracy_score(y_test, predictions))
+
+mlp_pipe.fit(X_train, y_train)
+predict_proba = mlp_pipe.predict_proba(X_test)
+predictions = mlp_pipe.predict(X_test)
+print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba, multi_class="ovr"))
+print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
+print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
+print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
+print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
+print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
+print("ACCURACY:", accuracy_score(y_test, predictions))
+
+#TODO Improve and compare models now with GridSearch and other ideas like comparing with log-transformation
