@@ -149,3 +149,6 @@ print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
 
 #TODO Improve and compare models now with GridSearch and other ideas like comparing with log-transformation
+#TODO Important read: StandardScaler is sensitive to outliers, and the features may scale differently from each other in the presence of outliers.
+#TODO No obvious huge outlier detected in histograms but possible optimization: Check outliers via function, set them nan, impute afterwards
+#TODO Simpler: Compare results of StandardScaler vs RobustScaler?
