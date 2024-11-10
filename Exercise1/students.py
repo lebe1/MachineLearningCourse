@@ -104,7 +104,7 @@ y_test = le.transform(y_test.values.ravel())
 ## Only the 14. plot showed a typical improvement of the log transformation
 ## print(colnames_continuous[13)
 ## which is the column 'inflation rate' and therefore stays as the only column to be log transformed
-## TODO Since log-transforming results in an not well-known error, this improvement is post-poned
+## TODO Since log-transforming only a single column results in a more difficult well-known error, this improvement is post-poned
 
 # plt.show()
 
@@ -124,6 +124,7 @@ print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
 print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
 
+# Fit and predict random forest
 random_forest_pipe.fit(X_train, y_train)
 predict_proba = random_forest_pipe.predict_proba(X_test)
 predictions = random_forest_pipe.predict(X_test)
@@ -136,6 +137,7 @@ print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
 print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
 
+# Fit and predict MLP
 mlp_pipe.fit(X_train, y_train)
 predict_proba = mlp_pipe.predict_proba(X_test)
 predictions = mlp_pipe.predict(X_test)
