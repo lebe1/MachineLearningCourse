@@ -11,8 +11,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import cross_val_score, cross_val_predict
-from sklearn.model_selection import KFold
 
 # Set random seed
 RANDOM_SEED = 12
@@ -66,32 +64,22 @@ y_train = le.fit_transform(y_train.values.ravel())
 y_test = le.fit_transform(y_test.values.ravel())
 
 # Fit and predict knn
-
-# We take 4 splits to divide the whole dataset into 5 splits with 0.2 percent for the test set
-cv = KFold(n_splits=(4))
-scores = cross_val_score(knn_pipe, X_train, y_train, cv = cv, scoring='accuracy')
-#predictions = cross_val_predict(knn_pipe, X_train, y_train, cv=cv)
 knn_pipe.fit(X_train, y_train)
 predictions = knn_pipe.predict(X_test)
-
-f1_knn = f1_score(y_train, predictions, average='macro')
-acc_knn = accuracy_score(y_train, predictions)
+f1_knn = f1_score(y_test, predictions, average='macro')
+acc_knn = accuracy_score(y_test, predictions)
 
 # Fit and predict random forest
-# random_forest_pipe.fit(X_train, y_train)
-# predictions = random_forest_pipe.predict(X_test)
-scores = cross_val_score(random_forest_pipe, X_train, y_train, cv = cv, scoring='accuracy')
-predictions = cross_val_predict(random_forest_pipe, X_train, y_train, cv=cv)
-f1_rf = f1_score(y_train, predictions, average='macro')
-acc_rf = accuracy_score(y_train, predictions)
+random_forest_pipe.fit(X_train, y_train)
+predictions = random_forest_pipe.predict(X_test)
+f1_rf = f1_score(y_test, predictions, average='macro')
+acc_rf = accuracy_score(y_test, predictions)
 
 # Fit and predict MLP
-# scores = cross_val_score(mlp_pipe, X_train, y_train, cv = cv, scoring='accuracy')
-# predictions = cross_val_predict(mlp_pipe, X_train, y_train, cv=cv)
-# # mlp_pipe.fit(X_train, y_train)
-# # predictions = mlp_pipe.predict(X_test)
-# f1_mlp = f1_score(y_train, predictions, average='macro')
-# acc_mlp = accuracy_score(y_train, predictions)
+mlp_pipe.fit(X_train, y_train)
+predictions = mlp_pipe.predict(X_test)
+f1_mlp = f1_score(y_test, predictions, average='macro')
+acc_mlp = accuracy_score(y_test, predictions)
 
 # Open a file to write scores
 with open("scores.txt", "w") as file:

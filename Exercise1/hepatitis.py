@@ -9,10 +9,13 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import roc_auc_score, f1_score, recall_score, precision_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.impute import SimpleImputer
+
+# Set random seed
+RANDOM_SEED = 12
 
 # Define column names for the dataset from the hepatitis.names file
 columns = ['Class', 'AGE', 'SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'BILIRUBIN', 'ALK PHOSPHATE', 'SGOT', 'ALBUMIN', 'PROTIME', 'HISTOLOGY']
@@ -30,10 +33,13 @@ X_hepatitis = df.drop('Class', axis=1)
 X_hepatitis = X_hepatitis.replace('?', np.nan)
 
 # train/test split
-X_train, X_test, y_train, y_test = train_test_split(X_hepatitis, y_hepatitis, test_size=0.2, shuffle=True, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_hepatitis, y_hepatitis, test_size=0.2, shuffle=True, random_state=RANDOM_SEED)
 
 
-# Set up the colnames
+print("After split",X_train.isna().sum().sum())
+print("After split",X_test.isna().sum().sum())
+
+# Split up the column names into numerical and categorical attributes 
 colnames_numerical = ["AGE", "BILIRUBIN", "ALK PHOSPHATE", "SGOT", "ALBUMIN", "PROTIME"]
 
 colnames_categorical = ['SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 
@@ -48,82 +54,63 @@ num_impute_pipe = make_pipeline(SimpleImputer(strategy='median', missing_values=
 scale_pipe = make_pipeline(StandardScaler())
 log_pipe = make_pipeline(PowerTransformer())
 
-# One-hot encode all categories represented by numbers (integer)
-categorical_pipe = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
 
-transformer = ColumnTransformer(
+impute = ColumnTransformer(
     transformers=[
         ("impute_categories", cat_impute_pipe, colnames_categorical),
         ("impute_numerics", num_impute_pipe, colnames_numerical),
-        #("scale", scale_pipe, colnames_numerical),
-        #("one_hot_encode", categorical_pipe, colnames_categorical),
     ]
 )
 
-transformer_pipe = Pipeline([("preprocess", transformer)])
+# Impute both train sets before inserting to model to prevent error for models not able to handle NaNs
+imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
+imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-# Set pipelines
-knn_pipe = Pipeline([("knn", KNeighborsClassifier())])
-random_forest_pipe = Pipeline([("prep", transformer), ("random_forest", RandomForestClassifier(random_state=1))])
-mlp_pipe = Pipeline([("mlp", MLPClassifier(random_state=1))])
+# TODO: Final task if all other finished, try to find a good workaround to do one-hot encoding on this dataset
+# onehot_encoder = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
 
-# Transform X data sets before inserting to model to prevent error for models not able to handle NaNs
-transformer_pipe.fit(X_train, y_train)
-transformed_data_X_train = pd.DataFrame(transformer_pipe.transform(X_train))
+# encode = ColumnTransformer(
+#     transformers=[
+#         ("encode_categories", onehot_encoder, colnames_categorical),
+#     ]
+# )
 
-transformer_pipe.fit(X_test)
-transformed_data_X_test = pd.DataFrame(transformer_pipe.transform(X_test))
+# encoded_X_train =  pd.DataFrame(encode.fit_transform(imputed_X_train))
+# encoded_X_test = pd.DataFrame(encode.fit_transform(imputed_X_test))
 
+sk = StandardScaler()
+scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
+scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
 
+print("After scale",scaled_X_train.isna().sum().sum())
 
 # Convert target value to numpy array
 y_test = y_test.values.flatten()
-y_train = y_train.values.ravel()
+y_train = y_train.values.flatten()
+
+# Set pipelines
+knn_model = KNeighborsClassifier()
+random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED)
+mlp_model = MLPClassifier(random_state=RANDOM_SEED, max_iter=500)
 
 # Fit and predict knn
-knn_pipe.fit(transformed_data_X_train, y_train)
-predict_proba = knn_pipe.predict_proba(transformed_data_X_test)
-predictions = knn_pipe.predict(transformed_data_X_test)
-#print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba, multi_class="ovr"))
-print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+knn_model.fit(scaled_X_train, y_train)
+predictions = knn_model.predict(scaled_X_test)
 print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
-print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
-print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
-print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
-print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
-print("KNN not predicting positive value:", set(y_test) - set(predictions))
-
-
+if set(y_test) - set(predictions):
+    print("KNN not predicting both values. Missing value is: ", set(y_test) - set(predictions))
 
 # Fit and predict random forest
-random_forest_pipe.fit(X_train, y_train)
-predict_proba = random_forest_pipe.predict_proba(X_test)
-predictions = random_forest_pipe.predict(X_test)
-
-
-#print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba, multi_class="ovr"))
-print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+random_forest_model.fit(scaled_X_train, y_train)
+predictions = random_forest_model.predict(scaled_X_test)
 print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
-print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
-print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
-print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
-print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
 
 # Fit and predict MLP
-mlp_pipe.fit(transformed_data_X_train, y_train)
-predict_proba = mlp_pipe.predict_proba(transformed_data_X_test)
-predictions = mlp_pipe.predict(transformed_data_X_test)
-#print("ROC_AUC_SCORE:", roc_auc_score(y_test, predict_proba))
-print("F1_SCORE_MICRO:", f1_score(y_test, predictions, average='micro'))
+mlp_model.fit(scaled_X_train, y_train)
+predictions = mlp_model.predict(scaled_X_test)
 print("F1_SCORE_MACRO:", f1_score(y_test, predictions, average='macro'))
-print("RECAL_MICRO:", recall_score(y_test, predictions, average='micro'))
-print("PRECISION_MICRO:", precision_score(y_test, predictions, average='micro'))
-print("RECAL_MACRO:", recall_score(y_test, predictions, average='macro'))
-print("PRECISION_MACRO:", precision_score(y_test, predictions, average='macro'))
 print("ACCURACY:", accuracy_score(y_test, predictions))
-print("KNN not predicting positive value:", set(y_test) - set(predictions))
-
-# TODO Fix imputing on both test and train dataset
-# TODO Fix scaling error in pipeline leading to dataset not predicting positives
+if set(y_test) - set(predictions):
+    print("MLP not predicting both values. Missing value is: ", set(y_test) - set(predictions))
