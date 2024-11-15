@@ -1,16 +1,21 @@
 import numpy as np
 import pandas as pd
+import time
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import KFold
+
+# Start measure time point
+start = time.time()
 
 # Set random seed
 RANDOM_SEED = 12
@@ -41,6 +46,8 @@ colnames_categorical = np.append(colnames_categorical_1, colnames_categorical_2)
 
 # Create scaling pipelines for all continuous values
 scale_pipe = make_pipeline(StandardScaler())
+robust_scale_pipe = make_pipeline(RobustScaler())
+min_max_scale_pipe = make_pipeline(MinMaxScaler())
 log_pipe = make_pipeline(PowerTransformer())
 
 # One-hot encode all categories represented by numbers (integer)
@@ -49,6 +56,8 @@ categorical_pipe = make_pipeline(OneHotEncoder(sparse_output=False, handle_unkno
 transformer = ColumnTransformer(
     transformers=[
         #("scale", scale_pipe, colnames_numerical),
+        #("robustscale", robust_scale_pipe, colnames_numerical),
+        ("minmaxscaler", min_max_scale_pipe, colnames_numerical),
         #("log_transform", log_pipe, colnames_numerical[13]),
         ("one_hot_encode", categorical_pipe, colnames_categorical),
     ]
@@ -64,6 +73,7 @@ y_train = le.fit_transform(y_train.values.ravel())
 y_test = le.fit_transform(y_test.values.ravel())
 
 # Fit and predict knn
+
 knn_pipe.fit(X_train, y_train)
 predictions = knn_pipe.predict(X_test)
 f1_knn = f1_score(y_test, predictions, average='macro')
@@ -81,10 +91,12 @@ predictions = mlp_pipe.predict(X_test)
 f1_mlp = f1_score(y_test, predictions, average='macro')
 acc_mlp = accuracy_score(y_test, predictions)
 
+end = time.time()
 # Open a file to write scores
 with open("scores.txt", "w") as file:
-    file.write(f"KNN\nF1_SCORE_MACRO: {f1_knn}\nACCURACY: {acc_knn}\n\n")
-    file.write(f"Random Forest\nF1_SCORE_MACRO: {f1_rf}\nACCURACY: {acc_rf}\n\n")
-    file.write(f"MLP\nF1_SCORE_MACRO: {f1_mlp}\nACCURACY: {acc_mlp}\n")
+    file.write(f"KNN\nF1_SCORE_MACRO: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n\n")
+    file.write(f"Random Forest\nF1_SCORE_MACRO: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n\n")
+    file.write(f"MLP\nF1_SCORE_MACRO: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n\n")
+    file.write(f"Execution time in s: {round(end - start,2)}")
 
 
