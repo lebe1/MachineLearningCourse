@@ -20,7 +20,7 @@ from sklearn.model_selection import GridSearchCV
 RANDOM_SEED = 12
 
 # Load dataset
-df = pd.read_csv('data/students_data.csv', delimiter=';')
+df = pd.read_csv('../data/students_data.csv', delimiter=';')
 
 # Extract the target variable 'Target' as y
 y_student = df[['Target']]

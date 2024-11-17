@@ -14,14 +14,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import KFold
 
-# Start measure time point
-start = time.time()
 
-# Set random seed
-RANDOM_SEED = 12
 
 # Load dataset
-df = pd.read_csv('data/students_data.csv', delimiter=';')
+df = pd.read_csv('../data/students_data.csv', delimiter=';')
 
 # Extract the target variable 'Target' as y
 y_student = df[['Target']]
@@ -68,12 +64,16 @@ le = LabelEncoder()
 y_train = le.fit_transform(y_train.values.ravel())
 y_test = le.fit_transform(y_test.values.ravel())
 
-# Fit and predict knn
+# Start measure time point
+knn_start = time.time()
 
+# Fit and predict knn
 knn_pipe.fit(X_train, y_train)
 predictions = knn_pipe.predict(X_test)
 f1_knn = f1_score(y_test, predictions, average='macro')
 acc_knn = accuracy_score(y_test, predictions)
+
+knn_end = time.time()
 
 # Fit and predict random forest
 random_forest_pipe.fit(X_train, y_train)
@@ -81,18 +81,25 @@ predictions = random_forest_pipe.predict(X_test)
 f1_rf = f1_score(y_test, predictions, average='macro')
 acc_rf = accuracy_score(y_test, predictions)
 
+random_forest_end = time.time()
+
 # Fit and predict MLP
 mlp_pipe.fit(X_train, y_train)
 predictions = mlp_pipe.predict(X_test)
 f1_mlp = f1_score(y_test, predictions, average='macro')
 acc_mlp = accuracy_score(y_test, predictions)
 
-end = time.time()
+mlp_end = time.time()
+
+
 # Open a file to write scores
 with open("scores.txt", "w") as file:
     file.write(f"KNN\nF1_SCORE_MACRO: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n\n")
+    file.write(f"KNN Execution time in s: {round(knn_end - knn_start,2)}\n\n")
     file.write(f"Random Forest\nF1_SCORE_MACRO: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n\n")
+    file.write(f"Random Forest Execution time in s: {round(random_forest_end - knn_end,2)}\n\n")
     file.write(f"MLP\nF1_SCORE_MACRO: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n\n")
-    file.write(f"Execution time in s: {round(end - start,2)}")
+    file.write(f"MLP Execution time in s: {round(mlp_end - random_forest_end,2)}\n\n")
+
 
 
