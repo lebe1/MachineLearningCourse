@@ -14,11 +14,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import KFold
 
-# Start measure time point
-start = time.time()
-
 # Set random seed
-RANDOM_SEED = 12
+RANDOM_SEED = 42
 
 # Load dataset
 df = pd.read_csv('../data/students_data.csv', delimiter=';')

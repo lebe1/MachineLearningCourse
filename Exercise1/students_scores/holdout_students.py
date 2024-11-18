@@ -14,7 +14,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import KFold
 
-
+# Set random seed
+RANDOM_SEED = 42
 
 # Load dataset
 df = pd.read_csv('../data/students_data.csv', delimiter=';')

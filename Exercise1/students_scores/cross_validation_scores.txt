@@ -1,15 +1,15 @@
 KNN
-F1_SCORE_MACRO: 0.41
 ACCURACY: 0.5
-KNN Execution time in s: 0.22
+
+KNN Execution time in s: 0.14
 
 Random Forest
-F1_SCORE_MACRO: 0.44
-ACCURACY: 0.55
-Random Forest Execution time in s: 3.02
+ACCURACY: 0.54
+
+Random Forest Execution time in s: 1.99
 
 MLP
-F1_SCORE_MACRO: 0.45
 ACCURACY: 0.51
-MLP Execution time in s: 23.45
+
+MLP Execution time in s: 15.36
 

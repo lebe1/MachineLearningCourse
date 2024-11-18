@@ -17,7 +17,7 @@ from sklearn.model_selection import GridSearchCV
 
 
 # Set random seed
-RANDOM_SEED = 12
+RANDOM_SEED = 42
 
 # Load dataset
 df = pd.read_csv('../data/students_data.csv', delimiter=';')
@@ -92,7 +92,7 @@ transformer = ColumnTransformer(
 # Explanation for GridSearchCV in Pipeline: https://stackoverflow.com/a/43366811/19932351
 # We take 4 splits to divide the whole dataset into 5 splits with 0.2 percent for the test set
 knn_pipe = Pipeline([("prep", transformer), 
-                     ("knn", GridSearchCV(KNeighborsClassifier(),param_grid={'n_neighbors': [5, 10, 20, 30], 'weights': ['uniform', 'distance'], 'leaf_size': [2, 5, 10, 30, 50]}, cv=4, refit=True))])
+                     ("knn", GridSearchCV(KNeighborsClassifier(),param_grid={'n_neighbors': [5, 10, 20, 30], 'weights': ['uniform', 'distance'], 'leaf_size': [2, 5, 10, 30, 50]}, cv=5, refit=True))])
 random_forest_pipe = Pipeline([("prep", transformer), 
                                 ("random_forest", GridSearchCV(RandomForestClassifier(random_state=RANDOM_SEED), param_grid={'n_estimators': [50, 100, 200], 'criterion': ['gini', 'entropy', 'log_loss'], 'max_features': ['sqrt', 'log2', None]}, cv=5, refit=True))])
 mlp_pipe = Pipeline([("prep", transformer), ("mlp", GridSearchCV(MLPClassifier(random_state=RANDOM_SEED), param_grid={'hidden_layer_sizes': [50, 100, 200], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['lbfgs', 'sgd', 'adam'], 'learning_rate_init': [0.0001, 0.001, 0.01, 0.1], 'max_iter': [100, 200, 500] }, cv=5, refit=True))])
