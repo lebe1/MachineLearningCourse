@@ -22,7 +22,7 @@ RANDOM_SEED = 42
 # Define column names for the dataset from the hepatitis.names file
 columns = ['Class', 'AGE', 'SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'BILIRUBIN', 'ALK PHOSPHATE', 'SGOT', 'ALBUMIN', 'PROTIME', 'HISTOLOGY']
 
-df = pd.read_csv('data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
+df = pd.read_csv('../data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
 
 
 # Extract the target variable 'Target' as y
@@ -68,18 +68,6 @@ impute = ColumnTransformer(
 imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
 imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-# TODO: Final task if all other finished, try to find a good workaround to do one-hot encoding on this dataset
-# onehot_encoder = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
-
-# encode = ColumnTransformer(
-#     transformers=[
-#         ("encode_categories", onehot_encoder, colnames_categorical),
-#     ]
-# )
-
-# encoded_X_train =  pd.DataFrame(encode.fit_transform(imputed_X_train))
-# encoded_X_test = pd.DataFrame(encode.fit_transform(imputed_X_test))
-
 sk = StandardScaler()
 scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
 scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
@@ -91,9 +79,9 @@ y_test = y_test.values.flatten()
 y_train = y_train.values.flatten()
 
 # Set pipelines
-knn_model = KNeighborsClassifier()
-random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED)
-mlp_model = MLPClassifier(random_state=RANDOM_SEED)
+knn_model = KNeighborsClassifier(leaf_size=2, n_neighbors=5, weights='uniform')
+random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED, criterion='gini', max_features='sqrt', n_estimators=50)
+mlp_model = MLPClassifier(random_state=RANDOM_SEED, activation='logistic', hidden_layer_sizes=50, learning_rate_init=0.001, max_iter=200, solver='adam')
 
 
 # Start measure time point

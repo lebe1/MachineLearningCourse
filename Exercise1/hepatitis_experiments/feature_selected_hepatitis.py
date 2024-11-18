@@ -22,7 +22,7 @@ RANDOM_SEED = 42
 # Define column names for the dataset from the hepatitis.names file
 columns = ['Class', 'AGE', 'SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'BILIRUBIN', 'ALK PHOSPHATE', 'SGOT', 'ALBUMIN', 'PROTIME', 'HISTOLOGY']
 
-df = pd.read_csv('data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
+df = pd.read_csv('../data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
 
 
 # Extract the target variable 'Target' as y
@@ -34,6 +34,9 @@ X_hepatitis = df.drop('Class', axis=1)
 #Preprocess whole train dataset by replacing ? for None value for imputation reasons
 X_hepatitis = X_hepatitis.replace('?', np.nan)
 
+# Select only relevant features with high correlation as shown in explore_hepatitis.ipynb
+X_hepatitis = X_hepatitis[['SPIDERS', 'ASCITES', 'BILIRUBIN', 'ALBUMIN', 'PROTIME']]
+
 # train/test split
 X_train, X_test, y_train, y_test = train_test_split(X_hepatitis, y_hepatitis, test_size=0.2, shuffle=True, random_state=RANDOM_SEED)
 
@@ -42,10 +45,9 @@ print("After split",X_train.isna().sum().sum())
 print("After split",X_test.isna().sum().sum())
 
 # Split up the column names into numerical and categorical attributes 
-colnames_numerical = ["AGE", "BILIRUBIN", "ALK PHOSPHATE", "SGOT", "ALBUMIN", "PROTIME"]
+colnames_numerical = ["BILIRUBIN", "ALBUMIN", "PROTIME"]
 
-colnames_categorical = ['SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 
-            'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'HISTOLOGY']
+colnames_categorical = ['SPIDERS', 'ASCITES']
 
 # Impute missing values
 cat_impute_pipe = make_pipeline(SimpleImputer(strategy='most_frequent', missing_values=np.nan))
@@ -67,18 +69,6 @@ impute = ColumnTransformer(
 # Impute both train sets before inserting to model to prevent error for models not able to handle NaNs
 imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
 imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
-
-# TODO: Final task if all other finished, try to find a good workaround to do one-hot encoding on this dataset
-# onehot_encoder = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
-
-# encode = ColumnTransformer(
-#     transformers=[
-#         ("encode_categories", onehot_encoder, colnames_categorical),
-#     ]
-# )
-
-# encoded_X_train =  pd.DataFrame(encode.fit_transform(imputed_X_train))
-# encoded_X_test = pd.DataFrame(encode.fit_transform(imputed_X_test))
 
 sk = StandardScaler()
 scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))

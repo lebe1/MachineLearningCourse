@@ -1,0 +1,12 @@
+KNN
+ACCURACY: 0.75
+KNN Execution time in s: 0.03
+
+Random Forest
+ACCURACY: 0.83
+Random Forest Execution time in s: 0.29
+
+MLP
+ACCURACY: 0.86
+MLP Execution time in s: 0.23
+

@@ -14,6 +14,8 @@ from sklearn.metrics import f1_score, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import cross_val_score, cross_val_predict
+from sklearn.model_selection import KFold
 
 
 # Set random seed
@@ -22,7 +24,7 @@ RANDOM_SEED = 42
 # Define column names for the dataset from the hepatitis.names file
 columns = ['Class', 'AGE', 'SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'BILIRUBIN', 'ALK PHOSPHATE', 'SGOT', 'ALBUMIN', 'PROTIME', 'HISTOLOGY']
 
-df = pd.read_csv('data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
+df = pd.read_csv('../data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
 
 
 # Extract the target variable 'Target' as y
@@ -35,11 +37,11 @@ X_hepatitis = df.drop('Class', axis=1)
 X_hepatitis = X_hepatitis.replace('?', np.nan)
 
 # train/test split
-X_train, X_test, y_train, y_test = train_test_split(X_hepatitis, y_hepatitis, test_size=0.2, shuffle=True, random_state=RANDOM_SEED)
+#X_train, X_test, y_train, y_test = train_test_split(X_hepatitis, y_hepatitis, test_size=0.2, shuffle=True, random_state=RANDOM_SEED)
 
 
-print("After split",X_train.isna().sum().sum())
-print("After split",X_test.isna().sum().sum())
+# print("After split",X_train.isna().sum().sum())
+# print("After split",X_test.isna().sum().sum())
 
 # Split up the column names into numerical and categorical attributes 
 colnames_numerical = ["AGE", "BILIRUBIN", "ALK PHOSPHATE", "SGOT", "ALBUMIN", "PROTIME"]
@@ -65,30 +67,18 @@ impute = ColumnTransformer(
 )
 
 # Impute both train sets before inserting to model to prevent error for models not able to handle NaNs
-imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
-imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
+imputed_X_train = pd.DataFrame(impute.fit_transform(X_hepatitis))
+#imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-# TODO: Final task if all other finished, try to find a good workaround to do one-hot encoding on this dataset
-# onehot_encoder = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
+# sk = StandardScaler()
+# scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
+#scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
 
-# encode = ColumnTransformer(
-#     transformers=[
-#         ("encode_categories", onehot_encoder, colnames_categorical),
-#     ]
-# )
-
-# encoded_X_train =  pd.DataFrame(encode.fit_transform(imputed_X_train))
-# encoded_X_test = pd.DataFrame(encode.fit_transform(imputed_X_test))
-
-sk = StandardScaler()
-scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
-scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
-
-print("After scale",scaled_X_train.isna().sum().sum())
+print("After scale",imputed_X_train.isna().sum().sum())
 
 # Convert target value to numpy array
-y_test = y_test.values.flatten()
-y_train = y_train.values.flatten()
+#y_test = y_hepatitis.values.flatten()
+y_train = y_hepatitis.values.flatten()
 
 # Set pipelines
 knn_model = KNeighborsClassifier()
@@ -99,42 +89,31 @@ mlp_model = MLPClassifier(random_state=RANDOM_SEED)
 # Start measure time point
 knn_start = time.time()
 
-# Fit and predict knn
-knn_model.fit(scaled_X_train, y_train)
-knn_predictions = knn_model.predict(scaled_X_test)
-f1_knn = f1_score(y_test, knn_predictions, average='macro')
-acc_knn = accuracy_score(y_test, knn_predictions)
+cv = KFold(n_splits=(5))
+scores = cross_val_score(knn_model, imputed_X_train, y_train, cv = cv, scoring='accuracy')
+
+acc_knn = np.mean(scores)
 
 knn_end = time.time()
 
-# Fit and predict random forest
-random_forest_model.fit(scaled_X_train, y_train)
-random_forest_predictions = random_forest_model.predict(scaled_X_test)
-f1_rf = f1_score(y_test, random_forest_predictions, average='macro')
-acc_rf = accuracy_score(y_test, random_forest_predictions)
+scores = cross_val_score(random_forest_model, imputed_X_train, y_train, cv = cv, scoring='accuracy')
+
+acc_rf = np.mean(scores)
 
 random_forest_end = time.time()
 
-# Fit and predict MLP
-mlp_model.fit(scaled_X_train, y_train)
-mlp_predictions = mlp_model.predict(scaled_X_test)
-f1_mlp = f1_score(y_test, mlp_predictions, average='macro')
-acc_mlp = accuracy_score(y_test, mlp_predictions)
+scores = cross_val_score(mlp_model, imputed_X_train, y_train, cv = cv, scoring='accuracy')
+
+acc_mlp = np.mean(scores)
 
 mlp_end = time.time()
 
 
 # Open a file to write scores
 with open("scores.txt", "w") as file:
-    file.write(f"KNN\nF1_SCORE_MACRO: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n")
+    file.write(f"KNN\nACCURACY: {round(acc_knn,2)}\n")
     file.write(f"KNN Execution time in s: {round(knn_end - knn_start,2)}\n\n")
-    if set(y_test) - set(knn_predictions):
-        file.write(f"KNN not predicting both values. Missing value is: {set(y_test) - set(knn_predictions)}\n\n")
-    file.write(f"Random Forest\nF1_SCORE_MACRO: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n")
+    file.write(f"Random Forest\nACCURACY: {round(acc_rf,2)}\n")
     file.write(f"Random Forest Execution time in s: {round(random_forest_end - knn_end,2)}\n\n")
-    if set(y_test) - set(random_forest_predictions):
-        file.write(f"Random forest not predicting both values. Missing value is: {set(y_test) - set(random_forest_predictions)}\n\n")
-    file.write(f"MLP\nF1_SCORE_MACRO: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n")
+    file.write(f"MLP\nACCURACY: {round(acc_mlp,2)}\n")
     file.write(f"MLP Execution time in s: {round(mlp_end - random_forest_end,2)}\n\n")
-    if set(y_test) - set(mlp_predictions):
-        file.write(f"MLP not predicting both values. Missing value is: {set(y_test) - set(mlp_predictions)}\n\n")

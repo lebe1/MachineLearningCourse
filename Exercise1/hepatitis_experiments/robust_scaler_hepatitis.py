@@ -7,7 +7,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import f1_score, accuracy_score
@@ -22,7 +22,7 @@ RANDOM_SEED = 42
 # Define column names for the dataset from the hepatitis.names file
 columns = ['Class', 'AGE', 'SEX', 'STEROID', 'ANTIVIRALS', 'FATIGUE', 'MALAISE', 'ANOREXIA', 'LIVER BIG', 'LIVER FIRM', 'SPLEEN PALPABLE', 'SPIDERS', 'ASCITES', 'VARICES', 'BILIRUBIN', 'ALK PHOSPHATE', 'SGOT', 'ALBUMIN', 'PROTIME', 'HISTOLOGY']
 
-df = pd.read_csv('data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
+df = pd.read_csv('../data/hepatitis/hepatitis.data', sep=',', header=None, names=columns)
 
 
 # Extract the target variable 'Target' as y
@@ -68,21 +68,10 @@ impute = ColumnTransformer(
 imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
 imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-# TODO: Final task if all other finished, try to find a good workaround to do one-hot encoding on this dataset
-# onehot_encoder = make_pipeline(OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
-
-# encode = ColumnTransformer(
-#     transformers=[
-#         ("encode_categories", onehot_encoder, colnames_categorical),
-#     ]
-# )
-
-# encoded_X_train =  pd.DataFrame(encode.fit_transform(imputed_X_train))
-# encoded_X_test = pd.DataFrame(encode.fit_transform(imputed_X_test))
-
-sk = StandardScaler()
-scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
-scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
+#sk = StandardScaler()
+rs = RobustScaler()
+scaled_X_train = pd.DataFrame(rs.fit_transform(imputed_X_train))
+scaled_X_test = pd.DataFrame(rs.fit_transform(imputed_X_test))
 
 print("After scale",scaled_X_train.isna().sum().sum())
 
