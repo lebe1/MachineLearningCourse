@@ -26,7 +26,7 @@ ID,class
 857374,false
 897374,false
 905686,false
-873885,true
+873885,false
 9113538,true
 869224,false
 8912055,false
@@ -57,7 +57,7 @@ ID,class
 91858,false
 863270,false
 926682,true
-879523,true
+879523,false
 861598,false
 897132,false
 852763,true
@@ -73,7 +73,7 @@ ID,class
 9112712,false
 86135502,true
 889403,false
-8810158,true
+8810158,false
 902976,false
 9113816,false
 862028,true
@@ -89,7 +89,7 @@ ID,class
 859983,false
 861597,false
 866674,true
-905557,true
+905557,false
 91544001,false
 91544002,false
 9011971,true
@@ -162,7 +162,7 @@ ID,class
 855167,false
 921385,false
 906878,false
-8810987,true
+8810987,false
 84300903,true
 9110720,false
 877500,true
@@ -203,7 +203,7 @@ ID,class
 908916,false
 911320501,false
 9112085,false
-87556202,true
+87556202,false
 86135501,true
 865423,true
 862548,true
