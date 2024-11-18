@@ -68,44 +68,44 @@ impute = ColumnTransformer(
 imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
 imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-sk = StandardScaler()
-scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
-scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
+# sk = StandardScaler()
+# scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
+# scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
 
-print("After scale",scaled_X_train.isna().sum().sum())
+# print("After scale",scaled_X_train.isna().sum().sum())
 
 # Convert target value to numpy array
 y_test = y_test.values.flatten()
 y_train = y_train.values.flatten()
 
 # Set pipelines
-knn_model = KNeighborsClassifier(leaf_size=2, n_neighbors=5, weights='uniform')
-random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED, criterion='gini', max_features='sqrt', n_estimators=50)
-mlp_model = MLPClassifier(random_state=RANDOM_SEED, activation='logistic', hidden_layer_sizes=50, learning_rate_init=0.001, max_iter=200, solver='adam')
+knn_model = KNeighborsClassifier(leaf_size=2, n_neighbors=5, weights='distance')
+random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED, criterion='gini', max_features=None, n_estimators=200)
+mlp_model = MLPClassifier(random_state=RANDOM_SEED, activation='relu', hidden_layer_sizes=50, learning_rate_init=0.01, max_iter=500, solver='adam')
 
 
 # Start measure time point
 knn_start = time.time()
 
 # Fit and predict knn
-knn_model.fit(scaled_X_train, y_train)
-knn_predictions = knn_model.predict(scaled_X_test)
+knn_model.fit(imputed_X_train, y_train)
+knn_predictions = knn_model.predict(imputed_X_test)
 f1_knn = f1_score(y_test, knn_predictions, average='macro')
 acc_knn = accuracy_score(y_test, knn_predictions)
 
 knn_end = time.time()
 
 # Fit and predict random forest
-random_forest_model.fit(scaled_X_train, y_train)
-random_forest_predictions = random_forest_model.predict(scaled_X_test)
+random_forest_model.fit(imputed_X_train, y_train)
+random_forest_predictions = random_forest_model.predict(imputed_X_test)
 f1_rf = f1_score(y_test, random_forest_predictions, average='macro')
 acc_rf = accuracy_score(y_test, random_forest_predictions)
 
 random_forest_end = time.time()
 
 # Fit and predict MLP
-mlp_model.fit(scaled_X_train, y_train)
-mlp_predictions = mlp_model.predict(scaled_X_test)
+mlp_model.fit(imputed_X_train, y_train)
+mlp_predictions = mlp_model.predict(imputed_X_test)
 f1_mlp = f1_score(y_test, mlp_predictions, average='macro')
 acc_mlp = accuracy_score(y_test, mlp_predictions)
 

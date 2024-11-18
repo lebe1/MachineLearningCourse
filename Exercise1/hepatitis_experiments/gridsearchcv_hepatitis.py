@@ -68,11 +68,11 @@ impute = ColumnTransformer(
 imputed_X_train = pd.DataFrame(impute.fit_transform(X_train))
 imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 
-sk = StandardScaler()
-scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
-scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
+# sk = StandardScaler()
+# scaled_X_train = pd.DataFrame(sk.fit_transform(imputed_X_train))
+# scaled_X_test = pd.DataFrame(sk.fit_transform(imputed_X_test))
 
-print("After scale",scaled_X_train.isna().sum().sum())
+# print("After scale",scaled_X_train.isna().sum().sum())
 
 # Convert target value to numpy array
 y_test = y_test.values.flatten()
@@ -91,26 +91,26 @@ knn_start = time.time()
 knn_start = time.time()
 
 # Fit and predict knn
-knn_model.fit(scaled_X_train, y_train)
+knn_model.fit(imputed_X_train, y_train)
 knn_best_params = knn_model.best_params_
-predictions = knn_model.predict(scaled_X_test)
+predictions = knn_model.predict(imputed_X_test)
 f1_knn = f1_score(y_test, predictions, average='macro')
 acc_knn = accuracy_score(y_test, predictions)
 
 knn_end = time.time()
 
 # Fit and predict random forest
-random_forest_model.fit(scaled_X_train, y_train)
+random_forest_model.fit(imputed_X_train, y_train)
 random_forest_best_params = random_forest_model.best_params_
-predictions = random_forest_model.predict(scaled_X_test)
+predictions = random_forest_model.predict(imputed_X_test)
 f1_rf = f1_score(y_test, predictions, average='macro')
 acc_rf = accuracy_score(y_test, predictions)
 
 random_forest_end = time.time()
 
 # Fit and predict MLP
-mlp_model.fit(scaled_X_train, y_train)
-predictions = mlp_model.predict(scaled_X_test)
+mlp_model.fit(imputed_X_train, y_train)
+predictions = mlp_model.predict(imputed_X_test)
 mlp_best_params = mlp_model.best_params_
 f1_mlp = f1_score(y_test, predictions, average='macro')
 acc_mlp = accuracy_score(y_test, predictions)

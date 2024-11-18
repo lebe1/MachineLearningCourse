@@ -75,8 +75,8 @@ categorical_pipe = make_pipeline(OneHotEncoder(sparse_output=False, handle_unkno
 
 transformer = ColumnTransformer(
     transformers=[
-        #("scale", scale_pipe, colnames_numerical),
-        ("robustscale", robust_scale_pipe, colnames_numerical),
+        ("scale", scale_pipe, colnames_numerical),
+        #("robustscale", robust_scale_pipe, colnames_numerical),
         #("minmaxscaler", min_max_scale_pipe, colnames_numerical),
         #("log_transform", log_pipe, colnames_numerical),
         ("one_hot_encode", categorical_pipe, colnames_categorical),
