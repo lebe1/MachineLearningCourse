@@ -1,5 +1,9 @@
 # Exercise 1
 
+This repository consists of three folders. One folder is for the datasets. 
+Two folders show single python files for each experiment on the hepatitis dataset and the students dataset.
+The classifiers of the loan dataset and the breast cancer dataset are developed inside the python notebooks.
+
 ### Kaggle links
 [Loan competition](https://www.kaggle.com/competitions/184-702-tu-ml-ws-24-loan)
 

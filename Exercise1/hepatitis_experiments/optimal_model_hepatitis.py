@@ -79,9 +79,9 @@ y_test = y_test.values.flatten()
 y_train = y_train.values.flatten()
 
 # Set pipelines
-knn_model = KNeighborsClassifier(leaf_size=2, n_neighbors=5, weights='distance')
-random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED, criterion='gini', max_features=None, n_estimators=200)
-mlp_model = MLPClassifier(random_state=RANDOM_SEED, activation='relu', hidden_layer_sizes=50, learning_rate_init=0.01, max_iter=500, solver='adam')
+knn_model = KNeighborsClassifier(metric='manhattan', n_neighbors=3, weights='uniform')
+random_forest_model = RandomForestClassifier(random_state=RANDOM_SEED, max_depth=None, max_features=0.2, min_samples_leaf=1, n_estimators=500)
+mlp_model = MLPClassifier(random_state=RANDOM_SEED, activation='logistic', hidden_layer_sizes=(50,50), learning_rate_init=0.01, solver='adam')
 
 
 # Start measure time point
@@ -90,7 +90,7 @@ knn_start = time.time()
 # Fit and predict knn
 knn_model.fit(imputed_X_train, y_train)
 knn_predictions = knn_model.predict(imputed_X_test)
-f1_knn = f1_score(y_test, knn_predictions, average='macro')
+f1_knn = f1_score(y_test, knn_predictions, average='binary')
 acc_knn = accuracy_score(y_test, knn_predictions)
 
 knn_end = time.time()
@@ -98,7 +98,7 @@ knn_end = time.time()
 # Fit and predict random forest
 random_forest_model.fit(imputed_X_train, y_train)
 random_forest_predictions = random_forest_model.predict(imputed_X_test)
-f1_rf = f1_score(y_test, random_forest_predictions, average='macro')
+f1_rf = f1_score(y_test, random_forest_predictions, average='binary')
 acc_rf = accuracy_score(y_test, random_forest_predictions)
 
 random_forest_end = time.time()
@@ -106,7 +106,7 @@ random_forest_end = time.time()
 # Fit and predict MLP
 mlp_model.fit(imputed_X_train, y_train)
 mlp_predictions = mlp_model.predict(imputed_X_test)
-f1_mlp = f1_score(y_test, mlp_predictions, average='macro')
+f1_mlp = f1_score(y_test, mlp_predictions, average='binary')
 acc_mlp = accuracy_score(y_test, mlp_predictions)
 
 mlp_end = time.time()
@@ -114,15 +114,15 @@ mlp_end = time.time()
 
 # Open a file to write scores
 with open("scores.txt", "w") as file:
-    file.write(f"KNN\nF1_SCORE_MACRO: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n")
+    file.write(f"KNN\nF1_SCORE_BINARY: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n")
     file.write(f"KNN Execution time in s: {round(knn_end - knn_start,2)}\n\n")
     if set(y_test) - set(knn_predictions):
         file.write(f"KNN not predicting both values. Missing value is: {set(y_test) - set(knn_predictions)}\n\n")
-    file.write(f"Random Forest\nF1_SCORE_MACRO: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n")
+    file.write(f"Random Forest\nF1_SCORE_BINARY: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n")
     file.write(f"Random Forest Execution time in s: {round(random_forest_end - knn_end,2)}\n\n")
     if set(y_test) - set(random_forest_predictions):
         file.write(f"Random forest not predicting both values. Missing value is: {set(y_test) - set(random_forest_predictions)}\n\n")
-    file.write(f"MLP\nF1_SCORE_MACRO: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n")
+    file.write(f"MLP\nF1_SCORE_BINARY: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n")
     file.write(f"MLP Execution time in s: {round(mlp_end - random_forest_end,2)}\n\n")
     if set(y_test) - set(mlp_predictions):
         file.write(f"MLP not predicting both values. Missing value is: {set(y_test) - set(mlp_predictions)}\n\n")

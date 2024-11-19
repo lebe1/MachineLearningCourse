@@ -1,18 +1,24 @@
 KNN
-F1_SCORE_MACRO: 0.64
-ACCURACY: 0.74
-KNN Execution time in s: 1.49
-KNN Best params: {'leaf_size': 2, 'n_neighbors': 30, 'weights': 'uniform'}
+F1_SCORE_MACRO: 0.58
+ACCURACY: 0.68
+
+KNN Execution time in s: 14.39
+
+KNN Best params: {'metric': 'minkowski', 'n_neighbors': 7, 'weights': 'uniform'}
 
 Random Forest
-F1_SCORE_MACRO: 0.66
+F1_SCORE_MACRO: 0.65
 ACCURACY: 0.75
-Random Forest Execution time in s: 84.76
-Random Forest Best params: {'criterion': 'entropy', 'max_features': 'sqrt', 'n_estimators': 100}
+
+Random Forest Execution time in s: 362.91
+
+Random Forest Best params: {'max_depth': None, 'max_features': 0.2, 'min_samples_leaf': 1, 'n_estimators': 200}
 
 MLP
-F1_SCORE_MACRO: 0.68
-ACCURACY: 0.76
-MLP Execution time in s: 3233.59
-MLP Best params: {'activation': 'tanh', 'hidden_layer_sizes': 50, 'learning_rate_init': 0.01, 'max_iter': 100, 'solver': 'sgd'}
+F1_SCORE_MACRO: 0.65
+ACCURACY: 0.74
+
+MLP Execution time in s: 634.66
+
+MLP Best params: {'activation': 'tanh', 'hidden_layer_sizes': (50,), 'learning_rate_init': 0.0001, 'solver': 'adam'}
 
