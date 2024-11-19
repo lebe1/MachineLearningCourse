@@ -58,9 +58,9 @@ transformer = ColumnTransformer(
     ]
 )
 
-knn_pipe = Pipeline([("prep", transformer), ("knn", KNeighborsClassifier(leaf_size=2, n_neighbors=30, weights="uniform"))])
-random_forest_pipe = Pipeline([("prep", transformer), ("random_forest", RandomForestClassifier(random_state=RANDOM_SEED, criterion='entropy', max_features="sqrt", n_estimators=100))])
-mlp_pipe = Pipeline([("prep", transformer), ("mlp", MLPClassifier(random_state=RANDOM_SEED, activation='tanh', hidden_layer_sizes=50, learning_rate_init=0.01, max_iter=100, solver='sgd'))])
+knn_pipe = Pipeline([("prep", transformer), ("knn", KNeighborsClassifier(metric='minkowski', n_neighbors=7, weights='uniform'))])
+random_forest_pipe = Pipeline([("prep", transformer), ("random_forest", RandomForestClassifier(random_state=RANDOM_SEED, max_depth=None, max_features=0.2, min_samples_leaf=1, n_estimators=200))])
+mlp_pipe = Pipeline([("prep", transformer), ("mlp",  MLPClassifier(random_state=RANDOM_SEED, activation='tanh', hidden_layer_sizes=(50,), learning_rate_init=0.0001, solver='adam'))])
 
 # Encode the target
 le = LabelEncoder()

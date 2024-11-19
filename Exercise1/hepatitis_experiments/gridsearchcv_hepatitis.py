@@ -78,10 +78,31 @@ imputed_X_test = pd.DataFrame(impute.fit_transform(X_test))
 y_test = y_test.values.flatten()
 y_train = y_train.values.flatten()
 
+param_grid_knn = {
+    "n_neighbors": [3, 5, 7, 9, 11, 15],
+    "weights": ["uniform", "distance"],
+    "metric": ["minkowski", "euclidean", "manhattan"]
+}
+
+param_grid_rf = {
+    "n_estimators": [100, 200, 500],
+    "max_features": ["sqrt", "log2", 0.2, 0.5],
+    "max_depth": [None, 10, 25, 40],
+    "min_samples_leaf": [1, 5]
+}
+
+param_grid_mlp = {
+    "hidden_layer_sizes": [(50,), (100,), (50, 50), (100, 100)],
+    "activation": ["relu", "tanh", "logistic"],
+    "solver": ["adam", "sgd"],
+    "learning_rate_init": [0.01, 0.001, 0.0001]
+}
+
+
 # Set pipelines
-knn_model = GridSearchCV(KNeighborsClassifier(),param_grid={'n_neighbors': [5, 10, 20, 30], 'weights': ['uniform', 'distance'], 'leaf_size': [2, 5, 10, 30, 50]}, cv=5)
-random_forest_model = GridSearchCV(RandomForestClassifier(random_state=RANDOM_SEED), param_grid={'n_estimators': [50, 100, 200], 'criterion': ['gini', 'entropy', 'log_loss'], 'max_features': ['sqrt', 'log2', None]}, cv=5)
-mlp_model = GridSearchCV(MLPClassifier(random_state=RANDOM_SEED), param_grid={'hidden_layer_sizes': [50, 100, 200], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['lbfgs', 'sgd', 'adam'], 'learning_rate_init': [0.0001, 0.001, 0.01, 0.1], 'max_iter': [100, 200, 500] }, cv=5)
+knn_model = GridSearchCV(KNeighborsClassifier(),param_grid=param_grid_knn, cv=5, scoring='f1')
+random_forest_model = GridSearchCV(RandomForestClassifier(random_state=RANDOM_SEED), param_grid=param_grid_rf, cv=5, scoring='f1')
+mlp_model = GridSearchCV(MLPClassifier(random_state=RANDOM_SEED), param_grid=param_grid_mlp, cv=5, scoring='f1')
 
 
 # Start measure time point
@@ -94,7 +115,7 @@ knn_start = time.time()
 knn_model.fit(imputed_X_train, y_train)
 knn_best_params = knn_model.best_params_
 predictions = knn_model.predict(imputed_X_test)
-f1_knn = f1_score(y_test, predictions, average='macro')
+f1_knn = f1_score(y_test, predictions, average='binary')
 acc_knn = accuracy_score(y_test, predictions)
 
 knn_end = time.time()
@@ -103,7 +124,7 @@ knn_end = time.time()
 random_forest_model.fit(imputed_X_train, y_train)
 random_forest_best_params = random_forest_model.best_params_
 predictions = random_forest_model.predict(imputed_X_test)
-f1_rf = f1_score(y_test, predictions, average='macro')
+f1_rf = f1_score(y_test, predictions, average='binary')
 acc_rf = accuracy_score(y_test, predictions)
 
 random_forest_end = time.time()
@@ -112,7 +133,7 @@ random_forest_end = time.time()
 mlp_model.fit(imputed_X_train, y_train)
 predictions = mlp_model.predict(imputed_X_test)
 mlp_best_params = mlp_model.best_params_
-f1_mlp = f1_score(y_test, predictions, average='macro')
+f1_mlp = f1_score(y_test, predictions, average='binary')
 acc_mlp = accuracy_score(y_test, predictions)
 
 mlp_end = time.time()
@@ -120,13 +141,13 @@ mlp_end = time.time()
 
 # Open a file to write scores
 with open("scores.txt", "w") as file:
-    file.write(f"KNN\nF1_SCORE_MACRO: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n\n")
+    file.write(f"KNN\nF1_SCORE_BINARY: {round(f1_knn,2)}\nACCURACY: {round(acc_knn,2)}\n\n")
     file.write(f"KNN Execution time in s: {round(knn_end - knn_start,2)}\n\n")
     file.write(f"KNN Best params: {knn_best_params}\n\n")
-    file.write(f"Random Forest\nF1_SCORE_MACRO: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n\n")
+    file.write(f"Random Forest\nF1_SCORE_BINARY: {round(f1_rf,2)}\nACCURACY: {round(acc_rf,2)}\n\n")
     file.write(f"Random Forest Execution time in s: {round(random_forest_end - knn_end,2)}\n\n")
     file.write(f"Random Forest Best params: {random_forest_best_params}\n\n")
-    file.write(f"MLP\nF1_SCORE_MACRO: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n\n")
+    file.write(f"MLP\nF1_SCORE_BINARY: {round(f1_mlp,2)}\nACCURACY: {round(acc_mlp,2)}\n\n")
     file.write(f"MLP Execution time in s: {round(mlp_end - random_forest_end,2)}\n\n")
     file.write(f"MLP Best params: {mlp_best_params}\n\n")
 

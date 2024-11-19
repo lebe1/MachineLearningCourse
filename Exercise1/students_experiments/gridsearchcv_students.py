@@ -64,12 +64,33 @@ transformer = ColumnTransformer(
 )
 
 # Explanation for GridSearchCV in Pipeline: https://stackoverflow.com/a/43366811/19932351
-# We take 4 splits to divide the whole dataset into 5 splits with 0.2 percent for the test set
+
+param_grid_knn = {
+    "n_neighbors": [3, 5, 7, 9, 11, 15],
+    "weights": ["uniform", "distance"],
+    "metric": ["minkowski", "euclidean", "manhattan"]
+}
+
+param_grid_rf = {
+    "n_estimators": [100, 200, 500],
+    "max_features": ["sqrt", "log2", 0.2, 0.5],
+    "max_depth": [None, 10, 25, 40],
+    "min_samples_leaf": [1, 5]
+}
+
+param_grid_mlp = {
+    "hidden_layer_sizes": [(50,), (100,), (50, 50), (100, 100)],
+    "activation": ["relu", "tanh", "logistic"],
+    "solver": ["adam", "sgd"],
+    "learning_rate_init": [0.01, 0.001, 0.0001]
+}
+
+
 knn_pipe = Pipeline([("prep", transformer), 
-                     ("knn", GridSearchCV(KNeighborsClassifier(),param_grid={'n_neighbors': [5, 10, 20, 30], 'weights': ['uniform', 'distance'], 'leaf_size': [2, 5, 10, 30, 50]}, cv=5, refit=True))])
+                     ("knn", GridSearchCV(KNeighborsClassifier(),param_grid=param_grid_knn, cv=5, refit=True, scoring='f1_macro', n_jobs=-1))])
 random_forest_pipe = Pipeline([("prep", transformer), 
-                                ("random_forest", GridSearchCV(RandomForestClassifier(random_state=RANDOM_SEED), param_grid={'n_estimators': [50, 100, 200], 'criterion': ['gini', 'entropy', 'log_loss'], 'max_features': ['sqrt', 'log2', None]}, cv=5, refit=True))])
-mlp_pipe = Pipeline([("prep", transformer), ("mlp", GridSearchCV(MLPClassifier(random_state=RANDOM_SEED), param_grid={'hidden_layer_sizes': [50, 100, 200], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['lbfgs', 'sgd', 'adam'], 'learning_rate_init': [0.0001, 0.001, 0.01, 0.1], 'max_iter': [100, 200, 500] }, cv=5, refit=True))])
+                                ("random_forest", GridSearchCV(RandomForestClassifier(random_state=RANDOM_SEED), param_grid=param_grid_rf, cv=5, refit=True, scoring='f1_macro', n_jobs=-1))])
+mlp_pipe = Pipeline([("prep", transformer), ("mlp", GridSearchCV(MLPClassifier(random_state=RANDOM_SEED), param_grid=param_grid_mlp, cv=5, refit=True, scoring='f1_macro', n_jobs=-1))])
 
 # Encode the target
 le = LabelEncoder()

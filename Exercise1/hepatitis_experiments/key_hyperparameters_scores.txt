@@ -1,0 +1,20 @@
+KNN Results:
+  Default (n=5) - Accuracy: 0.81, F1 Score: 0.4, Execution Time: 0.03 seconds
+  Small n (n=1) - Accuracy: 0.65, F1 Score: 0.27, Execution Time: 0.03 seconds
+  Big n (n=10) - Accuracy: 0.77, F1 Score: 0.0, Execution Time: 0.03 seconds
+  Biggest n (n=50) - Accuracy: 0.77, F1 Score: 0.0, Execution Time: 0.03 seconds
+
+Random Forest Results:
+  Default (n_estimators=100) - Accuracy: 0.81, F1 Score: 0.4
+  n_estimators=10 - Accuracy: 0.84, F1 Score: 0.62
+  n_estimators=50 - Accuracy: 0.77, F1 Score: 0.36
+  n_estimators=1000 - Accuracy: 0.74, F1 Score: 0.2
+  Execution Time: 0.8 seconds
+
+MLP Results:
+  Default (hidden_layer_sizes=(100,)) - Accuracy: 0.81, F1 Score: 0.4
+  hidden_layer_sizes=(10,) - Accuracy: 0.84, F1 Score: 0.62
+  hidden_layer_sizes=(50, 50) - Accuracy: 0.81, F1 Score: 0.4
+  hidden_layer_sizes=(100, 100) - Accuracy: 0.74, F1 Score: 0.2
+  Execution Time: 0.29 seconds
+
