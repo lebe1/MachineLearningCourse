@@ -9,21 +9,28 @@ random.seed(6)
 # Define column names for the dataset
 columns = ['mpg', 'cylinders', 'displacement', 'horsepower', 'weight', 'acceleration', 'model_year', 'origin', 'car_name']
 
-data = pd.read_csv('auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
+data = pd.read_csv('Exercise2/auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
 
 X_train = data.drop('mpg', axis=1)
 
 
 class RegressorTree():
+
+    def __init__(self, max_features) -> None:
+        self.max_features = max_features
     
+    
+    def select_random_feature(self, X_train):
+        list_column_names = list(X_train.columns.values)
+        feature_names = random.sample(list_column_names, self.max_features)
+        
+        dict_sorted_vectors = {}
+        for name in feature_names:
+            feature_vector = X_train[name].to_numpy().flatten()
+            sorted_feature_vector = np.sort(feature_vector)
+            dict_sorted_vectors[name] = list(sorted_feature_vector)
 
-    def select_random_feature(self, df):
-        feature_name = random.sample(list(df.columns.values), 1)[0]
-        # Sort dataframe by feature values
-        feature_series = df[feature_name].to_numpy().flatten()
-        sorted_feature_series = np.sort(feature_series)
-
-        return sorted_feature_series, feature_name
+        return dict_sorted_vectors, feature_names
 
     def calculate_average_of_two_sample_pairs(self, series):
         average_list = []
@@ -79,8 +86,11 @@ class RegressorTree():
 
     
 
-rtree = RegressorTree()
+rtree = RegressorTree(max_features=2)
+dict_features_sorted, feature_names = rtree.select_random_feature(X_train)
+#average_list = rtree.calculate_average_of_two_sample_pairs(feature_series)
+#rtree.split(feature_name, average_list, data)
+
+print(json.dumps(dict_features_sorted,sort_keys=True, indent=4))
+
 # TODO clean data input of X_train and _ytrain...
-feature_series, feature_name = rtree.select_random_feature(X_train)
-average_list = rtree.calculate_average_of_two_sample_pairs(feature_series)
-rtree.split(feature_name, average_list, data)
