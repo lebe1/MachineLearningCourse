@@ -26,71 +26,88 @@ class RegressorTree():
         
         dict_sorted_vectors = {}
         for name in feature_names:
-            feature_vector = X_train[name].to_numpy().flatten()
+            feature_vector = X_train[name].to_numpy()
             sorted_feature_vector = np.sort(feature_vector)
             dict_sorted_vectors[name] = list(sorted_feature_vector)
 
         return dict_sorted_vectors, feature_names
 
-    def calculate_average_of_two_sample_pairs(self, series):
-        average_list = []
-        for count, row in enumerate(series):
-            # Calculate average of each pair
-            average = (row + series[count+1])/2
 
-            average_list.append(average)
+    def calculate_average_of_two_sample_pairs(self, dict_features_sorted):
+        dict_averages_per_feature = {}
+
+        # iterate over key-value-pairs of dict
+        for feature_name, sorted_list in dict_features_sorted.items():
             
-            # Condition to break for loop since count starts at 1 and stopping at second last element
-            if count == (len(series) - 2):
-                break
+            dict_averages_per_feature[feature_name] = []
+            for idx, curr_value in enumerate(sorted_list):
+                # Calculate average of each pair of observations
+                average_two_obs = (curr_value + sorted_list[idx + 1]) / 2
 
-        return average_list
+                dict_averages_per_feature[feature_name].append(average_two_obs)
+                
+                # Condition to break for loop since idx starts at and stopping at second last element
+                if (idx == (len(sorted_list) - 2)):
+                    break
 
-
-    def get_optimal_split_value(self, feature_name, value_list, df):
-        sum_squared_residuals = {}
-        for count, value in enumerate(value_list):
-            # TODO fix condition especially for first and last value to be greater than or equals
-            left_dataframe = df[df[feature_name] <= value]
-            right_dataframe = df[df[feature_name] >= value]
-
-            left_target_mean = left_dataframe['mpg'].mean()
-            right_target_mean = right_dataframe['mpg'].mean()
-
-            # Convert to numpy array
-            left_mean_array = np.repeat(left_target_mean, len(left_dataframe))
-            right_mean_array = np.repeat(right_target_mean, len(right_dataframe))
-
-            # Calculate MSR
-            right_rmse = mean_squared_error(right_dataframe['mpg'], right_mean_array)
-            left_rmse = mean_squared_error(left_dataframe['mpg'], left_mean_array)
-
-            # Store the sum squared residual with its value
-            sum_squared_residuals[value] = left_rmse + right_rmse
-            
-
-        # Extract the minimum value of the sum_squared_residuals
-        optimal_split_value = min(sum_squared_residuals, key=sum_squared_residuals.get)
-        print(json.dumps(sum_squared_residuals,sort_keys=True, indent=4))
-        print(optimal_split_value)
+        return dict_averages_per_feature
 
 
-        return optimal_split_value
+    def get_optimal_split_value(self, dict_averages_per_feature, data):
+        # dict structure: feature_name: [(split_val_1, ssr_1), (split_val_2, ssr_2), ...]
+        dict_ssrs_per_feature = {}
+
+        # iterate over key-value-pairs of dict
+        for feature_name, avg_list in dict_averages_per_feature.items():
+
+            dict_ssrs_per_feature[feature_name] = []
+            for split_value in avg_list:
+                # TODO fix condition especially for first and last value to be greater than or equals
+                left_df  = data[data[feature_name] < split_value]
+                right_df = data[data[feature_name] >= split_value]
+
+                left_target_mean  = left_df["mpg"].mean()
+                right_target_mean = right_df["mpg"].mean()
+
+                # create numpy array with target mean for error metric
+                left_mean_array  = np.repeat(left_target_mean, len(left_df))
+                right_mean_array = np.repeat(right_target_mean, len(right_df))
+
+                # calculate individual SSR (Sum Squared Residuals)
+                left_ssr  = np.sum(np.square(left_df["mpg"] - left_mean_array))
+                right_ssr = np.sum(np.square(right_df["mpg"] - right_mean_array))
+
+                total_ssr = left_ssr + right_ssr
+                tuple_split_val_ssr = (split_value, total_ssr)
+                dict_ssrs_per_feature[feature_name].append(tuple_split_val_ssr)
+
+        # find min SSR locally for each feature, then globally
+        # list structure: [(feature_name_1, min_split_val_feature_1, corresponding_ssr), (feature_name_2, min_split_val_feature_2, corresponding_ssr), ...]
+        list_min_ssr_per_feature = []
+        for feature_name, tuple_list in dict_ssrs_per_feature.items():
+            min_tuple  = min(tuple_list, key=lambda x: x[1])
+            full_tuple = (feature_name, ) + min_tuple
+            list_min_ssr_per_feature.append(full_tuple)
+
+        # find min SSR globally
+        tuple_optimal_split = min(list_min_ssr_per_feature, key=lambda x: x[2])
+
+        return tuple_optimal_split
     
-    ## Next steps
-    # Marga: Implement predict function for MVP
-    # Can: calculation of optimal split value for each feature
-    # Leon: Construction of tree nodes
 
 
-
-    
 
 rtree = RegressorTree(max_features=2)
 dict_features_sorted, feature_names = rtree.select_random_feature(X_train)
-#average_list = rtree.calculate_average_of_two_sample_pairs(feature_series)
-#rtree.split(feature_name, average_list, data)
+dict_average_list = rtree.calculate_average_of_two_sample_pairs(dict_features_sorted)
+optimal_split_value = rtree.get_optimal_split_value(dict_average_list, data)
 
-print(json.dumps(dict_features_sorted,sort_keys=True, indent=4))
+print(optimal_split_value)
+# print(json.dumps(dict_average_list,sort_keys=True, indent=4))
 
 # TODO clean data input of X_train and _ytrain...
+
+## Next steps
+# Marga: Implement predict function for MVP
+# Can: calculation of optimal split value for each feature
+# Leon: Construction of tree nodes
