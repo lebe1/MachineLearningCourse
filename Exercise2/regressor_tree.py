@@ -1,7 +1,6 @@
 import pandas as pd
 import random
 import numpy as np
-#from sklearn.metrics import mean_squared_error
 import json
 
 random.seed(6)
@@ -95,7 +94,8 @@ class RegressorTree():
         return tuple_optimal_split
     
 
-    def predict(self, optimal_split_value, right_target_mean_opt, left_target_mean_opt, X_test):
+    def predict(self, optimal_split_value, X_test):
+        #TO DO: Adapt to multiple features
         feature_name=optimal_split_value[0]
         split_value= optimal_split_value[1]
         left_prediction=optimal_split_value[3]
@@ -103,7 +103,7 @@ class RegressorTree():
 
         y_pred_list=[]
 
-        for row in X_test:
+        for index, row in X_test.iterrows():
             if row[feature_name]< split_value:
                 y_pred=left_prediction
             else: 
@@ -119,8 +119,11 @@ rtree = RegressorTree(max_features=2)
 dict_features_sorted, feature_names = rtree.select_random_feature(X_train)
 dict_average_list = rtree.calculate_average_of_two_sample_pairs(dict_features_sorted)
 optimal_split_value = rtree.get_optimal_split_value(dict_average_list, data)
+y_pred=rtree.predict(optimal_split_value,X_train)
+
 
 print(optimal_split_value)
+print(set(y_pred))
 # print(json.dumps(dict_average_list,sort_keys=True, indent=4))
 
 # TODO clean data input of X_train and _ytrain...
