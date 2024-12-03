@@ -1,7 +1,7 @@
 import pandas as pd
 import random
 import numpy as np
-from sklearn.metrics import mean_squared_error
+#from sklearn.metrics import mean_squared_error
 import json
 
 random.seed(6)
@@ -78,7 +78,7 @@ class RegressorTree():
                 right_ssr = np.sum(np.square(right_df["mpg"] - right_mean_array))
 
                 total_ssr = left_ssr + right_ssr
-                tuple_split_val_ssr = (split_value, total_ssr)
+                tuple_split_val_ssr = (split_value, total_ssr, left_target_mean, right_target_mean)
                 dict_ssrs_per_feature[feature_name].append(tuple_split_val_ssr)
 
         # find min SSR locally for each feature, then globally
@@ -93,6 +93,24 @@ class RegressorTree():
         tuple_optimal_split = min(list_min_ssr_per_feature, key=lambda x: x[2])
 
         return tuple_optimal_split
+    
+
+    def predict(self, optimal_split_value, right_target_mean_opt, left_target_mean_opt, X_test):
+        feature_name=optimal_split_value[0]
+        split_value= optimal_split_value[1]
+        left_prediction=optimal_split_value[3]
+        right_prediction=optimal_split_value[4]
+
+        y_pred_list=[]
+
+        for row in X_test:
+            if row[feature_name]< split_value:
+                y_pred=left_prediction
+            else: 
+                y_pred=right_prediction
+            y_pred_list.append(y_pred)
+
+        return y_pred_list
     
 
 
