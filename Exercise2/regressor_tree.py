@@ -26,15 +26,14 @@ class Node():
 
 
     def train(self):
-        # if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
-        if (self.height < self.max_depth):
+        if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
             # split procedure
             # store results in new leftnode and rightnode
 
             data_left, data_right = train_test_split(self.data, test_size=0.5)
 
-            self.left_child = Node(data=data_left, height=self.height + 1, max_depth=1)
-            self.right_child = Node(data=data_right, height=self.height + 1, max_depth=1)
+            self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+            self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
             self.left_child.train()
             self.right_child.train()
         else:
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=1, height=0)
+    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=2, height=0)
     root.train()
     print(root.right_child.flag)
 
