@@ -75,6 +75,8 @@ class Node():
         if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
             # split procedure
             # store results in new leftnode and rightnode
+            dict_sorted_vectors = self.select_random_feature()
+            dict_averages_per_feature=self.calculate_average_of_two_sample_pairs(dict_sorted_vectors)
 
             data_left, data_right = train_test_split(self.data, test_size=0.5)
 
@@ -102,6 +104,41 @@ class Node():
         return self.prediction
 
     
+    def select_random_feature(self):
+        X_train = self.data.drop("mpg", axis=1)
+        list_column_names = list(X_train.columns.values)
+
+        if (self.max_features > len(X_train.columns)):
+            # set max_features to number of predictors if it is initialized too large
+            self.max_features = len(X_train.columns)
+        feature_names = random.sample(list_column_names, self.max_features)
+        
+        dict_sorted_vectors = {}
+        for name in feature_names:
+            feature_vector = X_train[name].to_numpy()
+            sorted_feature_vector = np.sort(feature_vector)
+            dict_sorted_vectors[name] = list(sorted_feature_vector)
+
+        return dict_sorted_vectors
+
+    def calculate_average_of_two_sample_pairs(self, dict_features_sorted):
+        dict_averages_per_feature = {}
+
+        # iterate over key-value-pairs of dict
+        for feature_name, sorted_list in dict_features_sorted.items():
+            
+            dict_averages_per_feature[feature_name] = []
+            for idx, curr_value in enumerate(sorted_list):
+                # Calculate average of each pair of observations
+                average_two_obs = (curr_value + sorted_list[idx + 1]) / 2
+
+                dict_averages_per_feature[feature_name].append(average_two_obs)
+                
+                # Condition to break for loop since idx starts at and stopping at second last element
+                if (idx == (len(sorted_list) - 2)):
+                    break
+
+        return dict_averages_per_feature    
 
 
 class RegressorTree():
@@ -229,7 +266,7 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, height=0)
+    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=1, height=0)
     root.train()
     print(root.flag)
     print(root.left_child.split_value)
