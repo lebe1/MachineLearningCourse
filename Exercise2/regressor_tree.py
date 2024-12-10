@@ -94,7 +94,9 @@ class Node():
             # Insert split value for current node
             self.split_feature, self.split_value = self.get_optimal_split_value(dict_averages_per_feature)
 
-            data_left, data_right = train_test_split(self.data, test_size=0.5)
+            # Split data according to split value
+            data_left  = self.data[self.data[self.feature_name] < self.split_value]
+            data_right = self.data[self.data[self.feature_name] >= self.split_value]
 
             self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
             self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
@@ -102,7 +104,10 @@ class Node():
             self.left_child.train()
             self.right_child.train()
         else:
+            # TODO Set value for leaf i.e. mean of remaining targets 
+            self.prediction = 2
             self.flag = "Leaf"
+
             
 
 
@@ -174,9 +179,14 @@ if __name__ == "__main__":
     print(root.left_child.split_value)
     print(root.left_child.left_child.flag)
 
-# TODO clean data input of X_train and _ytrain... --> "?" for some missing values
 
-## Next steps
-# Marga: Implement predict function for MVP
-# Can: calculation of optimal split value for each feature
-# Leon: Construction of tree nodes
+# TODO 1. add values to leaves -> Leon
+# TODO 2. add random forest skeleton -> Can 
+# TODO 3. find a 2. dataset and prepare everything for presentation and experiment
+# TODO 4. clean first dataset for experiment -> Marga
+
+# 1. Run experiments with both datasets on two metrices (runtime + RMSE + R-squared)
+# Think about hyper parameter tuning
+# 2. Let LLM create RandomForestTree Regressor and run over both datasets
+# 3. Use scikit learn model and run over both datasets
+# 4. Create presentation
