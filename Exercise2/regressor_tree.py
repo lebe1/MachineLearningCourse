@@ -24,6 +24,52 @@ class Node():
         self.split_value = split_value
         self.prediction = prediction
 
+    
+    def get_optimal_split_value(self, dict_averages_per_feature):
+        # dict structure: feature_name: [(split_val_1, ssr_1), (split_val_2, ssr_2), ...]
+        dict_ssrs_per_feature = {}
+
+        # iterate over key-value-pairs of dict
+        for feature_name, avg_list in dict_averages_per_feature.items():
+
+            dict_ssrs_per_feature[feature_name] = []
+            for split_value in avg_list:
+                # TODO fix condition especially for first and last value to be greater than or equals
+                # Why for first and last value especially?
+                # Should be fine since in the extreme case if split values are equal to feature values 
+                # all values go to right tree
+                # No other extreme cases possible like no values inside
+                left_df  = self.data[self.data[feature_name] < split_value]
+                right_df = self.data[self.data[feature_name] >= split_value]
+
+                left_target_mean  = left_df["mpg"].mean()
+                right_target_mean = right_df["mpg"].mean()
+
+                # create numpy array with target mean for error metric
+                left_mean_array  = np.repeat(left_target_mean, len(left_df))
+                right_mean_array = np.repeat(right_target_mean, len(right_df))
+
+                # calculate individual SSR (Sum Squared Residuals)
+                left_ssr  = np.sum(np.square(left_df["mpg"] - left_mean_array))
+                right_ssr = np.sum(np.square(right_df["mpg"] - right_mean_array))
+
+                total_ssr = left_ssr + right_ssr
+                tuple_split_val_ssr = (split_value, total_ssr, left_target_mean, right_target_mean)
+                dict_ssrs_per_feature[feature_name].append(tuple_split_val_ssr)
+
+        # find min SSR locally for each feature, then globally
+        # list structure: [(feature_name_1, min_split_val_feature_1, corresponding_ssr), (feature_name_2, min_split_val_feature_2, corresponding_ssr), ...]
+        list_min_ssr_per_feature = []
+        for feature_name, tuple_list in dict_ssrs_per_feature.items():
+            min_tuple  = min(tuple_list, key=lambda x: x[1])
+            full_tuple = (feature_name, ) + min_tuple
+            list_min_ssr_per_feature.append(full_tuple)
+
+        # find min SSR globally
+        tuple_optimal_split = min(list_min_ssr_per_feature, key=lambda x: x[2])
+
+        return tuple_optimal_split
+
 
     def train(self):
         if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
@@ -34,6 +80,11 @@ class Node():
 
             self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
             self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+            
+            # Insert split value for internal nodes
+            self.left_child.split_value = 2
+            self.right_child.split_value = 2
+
             self.left_child.train()
             self.right_child.train()
         else:
@@ -54,6 +105,8 @@ class Node():
 
 
 class RegressorTree():
+    def __init__(self):
+        self.max_features = 1
 
     def select_random_feature(self, X_train):
         list_column_names = list(X_train.columns.values)
@@ -81,7 +134,7 @@ class RegressorTree():
 
                 dict_averages_per_feature[feature_name].append(average_two_obs)
                 
-                # Condition to break for loop since idx starts at and stopping at second last element
+                # Condition to break for loop since idx starts at 0 and stopping at second last element
                 if (idx == (len(sorted_list) - 2)):
                     break
 
@@ -120,11 +173,16 @@ class RegressorTree():
         # list structure: [(feature_name_1, min_split_val_feature_1, corresponding_ssr), (feature_name_2, min_split_val_feature_2, corresponding_ssr), ...]
         list_min_ssr_per_feature = []
         for feature_name, tuple_list in dict_ssrs_per_feature.items():
+            print("Tuple list", tuple_list)
             min_tuple  = min(tuple_list, key=lambda x: x[1])
+            print("Min tuple", min_tuple)
             full_tuple = (feature_name, ) + min_tuple
+            print("Full tuple", full_tuple)
             list_min_ssr_per_feature.append(full_tuple)
 
         # find min SSR globally
+        print("Type", type(list_min_ssr_per_feature))
+        #print("Min Values", min(list_min_ssr_per_feature.values()))
         tuple_optimal_split = min(list_min_ssr_per_feature, key=lambda x: x[2])
 
         return tuple_optimal_split
@@ -151,16 +209,13 @@ class RegressorTree():
 
 
 
-# rtree = RegressorTree(max_features=2)
-# dict_features_sorted, feature_names = rtree.select_random_feature(X_train)
-# dict_average_list = rtree.calculate_average_of_two_sample_pairs(dict_features_sorted)
-# optimal_split_value = rtree.get_optimal_split_value(dict_average_list, data)
-# y_pred=rtree.predict(optimal_split_value,X_train)
+
+#y_pred=rtree.predict(optimal_split_value,X_train)
 
 
 # print(optimal_split_value)
 # print(set(y_pred))
-# # print(json.dumps(dict_average_list,sort_keys=True, indent=4))
+# print(json.dumps(dict_average_list,sort_keys=True, indent=4))
 
 if __name__ == "__main__":
     random.seed(6)
@@ -169,14 +224,22 @@ if __name__ == "__main__":
     columns = ['mpg', 'cylinders', 'displacement', 'horsepower', 'weight', 'acceleration', 'model_year', 'origin', 'car_name']
 
     # read data 
-    data = pd.read_csv('Exercise2/auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
+    data = pd.read_csv('auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
 
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=2, height=0)
+    root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, height=0)
     root.train()
-    print(root.right_child.flag)
+    print(root.flag)
+    print(root.left_child.split_value)
+    print(root.left_child.left_child.flag)
+
+    rtree = RegressorTree()
+    dict_features_sorted, feature_names = rtree.select_random_feature(X_train)
+    dict_average_list = rtree.calculate_average_of_two_sample_pairs(dict_features_sorted)
+    optimal_split_value = rtree.get_optimal_split_value(dict_average_list, data)
+    print(optimal_split_value)
 
 
 # TODO clean data input of X_train and _ytrain... --> "?" for some missing values
