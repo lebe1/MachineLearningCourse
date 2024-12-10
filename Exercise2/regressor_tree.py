@@ -30,6 +30,7 @@ class Node():
             # split procedure
             # store results in new leftnode and rightnode
             dict_sorted_vectors = self.select_random_feature()
+            dict_averages_per_feature=self.calculate_average_of_two_sample_pairs(dict_sorted_vectors)
 
             data_left, data_right = train_test_split(self.data, test_size=0.5)
 
