@@ -8,13 +8,14 @@ from sklearn.model_selection import train_test_split
 
 class Node():
 
-    def __init__(self, data, max_features=2, min_samples_split=2, max_depth=2, height=0, 
+    def __init__(self, data, max_features=2, min_samples_split=2, max_depth=2, target_class=None, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None) -> None:
         self.data = data
         self.max_features = max_features
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
+        self.target_class = target_class
         
         self.height = height
         self.left_child  = left_child
@@ -23,6 +24,11 @@ class Node():
         self.split_feature = split_feature
         self.split_value = split_value
         self.prediction = prediction
+
+        if self.target_class is None:
+            raise ValueError(
+                "Initialization error: 'target_class' must be provided. "
+            )
 
     
     def get_optimal_split_value(self, dict_averages_per_feature):
@@ -38,16 +44,16 @@ class Node():
                 left_df  = self.data[self.data[feature_name] < split_value]
                 right_df = self.data[self.data[feature_name] >= split_value]
 
-                left_target_mean  = left_df["mpg"].mean()
-                right_target_mean = right_df["mpg"].mean()
+                left_target_mean  = left_df[self.target_class].mean()
+                right_target_mean = right_df[self.target_class].mean()
 
                 # create numpy array with target mean for error metric
                 left_mean_array  = np.repeat(left_target_mean, len(left_df))
                 right_mean_array = np.repeat(right_target_mean, len(right_df))
 
                 # calculate individual SSR (Sum Squared Residuals)
-                left_ssr  = np.sum(np.square(left_df["mpg"] - left_mean_array))
-                right_ssr = np.sum(np.square(right_df["mpg"] - right_mean_array))
+                left_ssr  = np.sum(np.square(left_df[self.target_class] - left_mean_array))
+                right_ssr = np.sum(np.square(right_df[self.target_class] - right_mean_array))
 
                 total_ssr = left_ssr + right_ssr
                 tuple_split_val_ssr = {"Split value": split_value, "Total SSR": total_ssr}
@@ -56,7 +62,6 @@ class Node():
         # find min SSR locally for each feature, then globally
         # list structure: [(feature_name_1, min_split_val_feature_1, corresponding_ssr), (feature_name_2, min_split_val_feature_2, corresponding_ssr), ...]
         dict_best_values_per_feature = {}
-        print(dict_ssrs_per_feature)
         for feature_name, dictionary_list in dict_ssrs_per_feature.items():
             min_ssr = dictionary_list[0]["Total SSR"]
             best_split_value = dictionary_list[0]["Split value"]
@@ -71,7 +76,9 @@ class Node():
         # find min SSR, best split value and best feature globally over every feature
         global_min_ssr = dict_best_values_per_feature[str(next(iter(dict_best_values_per_feature)))]["Min SSR"]
         global_best_split_value = dict_best_values_per_feature[next(iter(dict_best_values_per_feature))]["Best split"]
-        best_feature = dict_best_values_per_feature[next(iter(dict_best_values_per_feature))]
+
+        # Get first key of dictionary, which is the first feature name
+        best_feature = list(dict_best_values_per_feature.keys())[0]
 
         for feature_name, dictionary in dict_best_values_per_feature.items():
             
@@ -94,12 +101,13 @@ class Node():
             # Insert split value for current node
             self.split_feature, self.split_value = self.get_optimal_split_value(dict_averages_per_feature)
 
-            # Split data according to split value
-            data_left  = self.data[self.data[self.feature_name] < self.split_value]
-            data_right = self.data[self.data[self.feature_name] >= self.split_value]
 
-            self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
-            self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+            # Split data according to split value
+            data_left  = self.data[self.data[self.split_feature] < self.split_value]
+            data_right = self.data[self.data[self.split_feature] >= self.split_value]
+
+            self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, target_class=self.target_class)
+            self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, target_class=self.target_class)
             
             self.left_child.train()
             self.right_child.train()
@@ -122,7 +130,7 @@ class Node():
 
     
     def select_random_feature(self):
-        X_train = self.data.drop("mpg", axis=1)
+        X_train = self.data.drop(self.target_class, axis=1)
         list_column_names = list(X_train.columns.values)
 
         if (self.max_features > len(X_train.columns)):
@@ -173,10 +181,12 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, height=0)
+    root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, target_class='mpg', height=0)
     root.train()
     print(root.flag)
-    print(root.left_child.split_value)
+    print(root.left_child.left_child.split_value)
+    
+    print(root.left_child.left_child.prediction)
     print(root.left_child.left_child.flag)
 
 
