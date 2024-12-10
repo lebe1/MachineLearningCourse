@@ -8,14 +8,13 @@ from sklearn.model_selection import train_test_split
 
 class Node():
 
-    def __init__(self, data, max_features=2, min_samples_split=2, max_depth=2, target_class=None, height=0, 
+    def __init__(self, max_features=2, min_samples_split=2, max_depth=2, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None) -> None:
-        self.data = data
+
         self.max_features = max_features
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
-        self.target_class = target_class
         
         self.height = height
         self.left_child  = left_child
@@ -25,11 +24,8 @@ class Node():
         self.split_value = split_value
         self.prediction = prediction
 
-        if self.target_class is None:
-            raise ValueError(
-                "Initialization error: 'target_class' must be provided. "
-            )
-
+        self.X_data = None
+        self.y_data = None
     
     def get_optimal_split_value(self, dict_averages_per_feature):
         # dict structure: feature_name: [(split_val_1, ssr_1), (split_val_2, ssr_2), ...]
@@ -41,19 +37,19 @@ class Node():
             dict_ssrs_per_feature[feature_name] = []
             for split_value in avg_list:
                 # Edge case proven in case one dataframe is empty
-                left_df  = self.data[self.data[feature_name] < split_value]
-                right_df = self.data[self.data[feature_name] >= split_value]
+                left_df  = self.y_data[self.X_data[feature_name] < split_value]
+                right_df = self.y_data[self.X_data[feature_name] >= split_value]
 
-                left_target_mean  = left_df[self.target_class].mean()
-                right_target_mean = right_df[self.target_class].mean()
+                left_target_mean  = left_df.mean()
+                right_target_mean = right_df.mean()
 
                 # create numpy array with target mean for error metric
                 left_mean_array  = np.repeat(left_target_mean, len(left_df))
                 right_mean_array = np.repeat(right_target_mean, len(right_df))
 
                 # calculate individual SSR (Sum Squared Residuals)
-                left_ssr  = np.sum(np.square(left_df[self.target_class] - left_mean_array))
-                right_ssr = np.sum(np.square(right_df[self.target_class] - right_mean_array))
+                left_ssr  = np.sum(np.square(left_df - left_mean_array))
+                right_ssr = np.sum(np.square(right_df - right_mean_array))
 
                 total_ssr = left_ssr + right_ssr
                 tuple_split_val_ssr = {"Split value": split_value, "Total SSR": total_ssr}
@@ -92,28 +88,36 @@ class Node():
         #return tuple_optimal_split
         return optimal_split
 
-    def train(self):
-        if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
+    def train(self, X_data, y_data):
+        
+        # Set data instances
+        self.X_data = X_data
+        self.y_data = y_data
+
+        if ((len(self.X_data) >= self.min_samples_split) & (self.height < self.max_depth)):
             # split procedure
             # store results in new leftnode and rightnode
-            dict_sorted_vectors = self.select_random_feature()
-            dict_averages_per_feature=self.calculate_average_of_two_sample_pairs(dict_sorted_vectors)
+            dict_averages_per_feature = self.get_average_values_per_feature()
             # Insert split value for current node
             self.split_feature, self.split_value = self.get_optimal_split_value(dict_averages_per_feature)
 
 
             # Split data according to split value
-            data_left  = self.data[self.data[self.split_feature] < self.split_value]
-            data_right = self.data[self.data[self.split_feature] >= self.split_value]
-
-            self.left_child = Node(data=data_left, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, target_class=self.target_class)
-            self.right_child = Node(data=data_right, height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, target_class=self.target_class)
+            data_left_X  = self.X_data[self.X_data[self.split_feature] < self.split_value]
+            data_left_y = self.y_data[self.X_data[self.split_feature] < self.split_value]
             
-            self.left_child.train()
-            self.right_child.train()
+            data_right_X = self.X_data[self.X_data[self.split_feature] >= self.split_value]
+            data_right_y = self.y_data[self.X_data[self.split_feature] >= self.split_value]
+
+
+            self.left_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+            self.right_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+
+            self.left_child.train(data_left_X, data_left_y)
+            self.right_child.train(data_right_X, data_right_y)
         else:
-            # 
-            self.prediction = self.data[self.target_class].mean()
+            # Get the prediction value by the mean of the remaining target data (y_data)
+            self.prediction = self.y_data.mean()
             self.flag = "Leaf"
 
             
@@ -133,28 +137,26 @@ class Node():
         return y_pred
 
     
-    def select_random_feature(self):
-        X_train = self.data.drop(self.target_class, axis=1)
-        list_column_names = list(X_train.columns.values)
+    def get_average_values_per_feature(self):
+        
+        list_column_names = list(self.X_data.columns.values)
 
-        if (self.max_features > len(X_train.columns)):
+        if (self.max_features > len(self.X_data.columns)):
             # set max_features to number of predictors if it is initialized too large
-            self.max_features = len(X_train.columns)
+            self.max_features = len(self.X_data.columns)
         feature_names = random.sample(list_column_names, self.max_features)
         
         dict_sorted_vectors = {}
         for name in feature_names:
-            feature_vector = X_train[name].to_numpy()
+            feature_vector = self.X_data[name].to_numpy()
             sorted_feature_vector = np.sort(feature_vector)
             dict_sorted_vectors[name] = list(sorted_feature_vector)
 
-        return dict_sorted_vectors
-
-    def calculate_average_of_two_sample_pairs(self, dict_features_sorted):
+ 
         dict_averages_per_feature = {}
 
         # iterate over key-value-pairs of dict
-        for feature_name, sorted_list in dict_features_sorted.items():
+        for feature_name, sorted_list in dict_sorted_vectors.items():
             
             dict_averages_per_feature[feature_name] = []
             for idx, curr_value in enumerate(sorted_list):
@@ -185,8 +187,8 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, target_class='mpg', height=0)
-    root.train()
+    root = Node(max_features=1, min_samples_split=2, max_depth=2, height=0)
+    root.train(X_train, y_train)
     print("Root flag: ", root.flag)
     print("Left left split value: ", root.left_child.left_child.split_value)
     
