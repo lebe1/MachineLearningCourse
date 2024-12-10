@@ -112,8 +112,8 @@ class Node():
             self.left_child.train()
             self.right_child.train()
         else:
-            # TODO Set value for leaf i.e. mean of remaining targets 
-            self.prediction = 2
+            # 
+            self.prediction = self.data[self.target_class].mean()
             self.flag = "Leaf"
 
             
@@ -183,11 +183,11 @@ if __name__ == "__main__":
 
     root = Node(data=data, max_features=1, min_samples_split=2, max_depth=2, target_class='mpg', height=0)
     root.train()
-    print(root.flag)
-    print(root.left_child.left_child.split_value)
+    print("Root flag: ", root.flag)
+    print("Left left split value: ", root.left_child.left_child.split_value)
     
-    print(root.left_child.left_child.prediction)
-    print(root.left_child.left_child.flag)
+    print("Left left prediciton value: ", root.left_child.left_child.prediction)
+    print("Left left flag; ", root.left_child.left_child.flag)
 
 
 # TODO 1. add values to leaves -> Leon
