@@ -119,14 +119,18 @@ class Node():
             
 
 
-    def predict(self):
-        while (self.flag != "Leaf"):
-            if (self.data[self.split_feature] < self.split_value):
-                self = self.left_child
-            else:
-                self = self.right_child
+    def predict(self, X_test):
+        y_pred = []
+        for index, row in X_test.iterrows():
+            while (self.flag != "Leaf"):
+                if (row[self.split_feature] < self.split_value):
+                    self = self.left_child
+                else:
+                    self = self.right_child
 
-        return self.prediction
+            y_pred.append(self.prediction)
+        
+        return y_pred
 
     
     def select_random_feature(self):
