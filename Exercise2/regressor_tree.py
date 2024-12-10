@@ -25,25 +25,6 @@ class Node():
         self.prediction = prediction
 
 
-    def calculate_average_of_two_sample_pairs(self, dict_features_sorted):
-        dict_averages_per_feature = {}
-
-        # iterate over key-value-pairs of dict
-        for feature_name, sorted_list in dict_features_sorted.items():
-            
-            dict_averages_per_feature[feature_name] = []
-            for idx, curr_value in enumerate(sorted_list):
-                # Calculate average of each pair of observations
-                average_two_obs = (curr_value + sorted_list[idx + 1]) / 2
-
-                dict_averages_per_feature[feature_name].append(average_two_obs)
-                
-                # Condition to break for loop since idx starts at and stopping at second last element
-                if (idx == (len(sorted_list) - 2)):
-                    break
-
-        return dict_averages_per_feature
-
     def train(self):
         if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
             # split procedure
@@ -88,7 +69,24 @@ class Node():
 
         return dict_sorted_vectors
 
-    
+    def calculate_average_of_two_sample_pairs(self, dict_features_sorted):
+        dict_averages_per_feature = {}
+
+        # iterate over key-value-pairs of dict
+        for feature_name, sorted_list in dict_features_sorted.items():
+            
+            dict_averages_per_feature[feature_name] = []
+            for idx, curr_value in enumerate(sorted_list):
+                # Calculate average of each pair of observations
+                average_two_obs = (curr_value + sorted_list[idx + 1]) / 2
+
+                dict_averages_per_feature[feature_name].append(average_two_obs)
+                
+                # Condition to break for loop since idx starts at and stopping at second last element
+                if (idx == (len(sorted_list) - 2)):
+                    break
+
+        return dict_averages_per_feature    
 
 
 class RegressorTree():
