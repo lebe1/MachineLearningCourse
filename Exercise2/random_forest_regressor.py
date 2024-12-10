@@ -9,10 +9,10 @@ import regressor_tree
 
 class RandomForestRegressor():
 
-    def __init__(self, data, n_trees = 2, fitted_trees=[], max_features=2, min_samples_split=2, max_depth=2, height=0, 
+    def __init__(self, n_trees = 2, fitted_trees=[], max_features=2, min_samples_split=2, max_depth=2, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None):
-        self.data = data
+      
         self.n_tress = n_trees
         self.fitted_trees = fitted_trees
         self.max_features = max_features
@@ -28,12 +28,12 @@ class RandomForestRegressor():
         self.prediction = prediction
 
 
-    def train(self):
+    def train(self, X_data, y_data):
         # create list of trees, store in attribute
         # think about bootstrapping to fit trees, as default use whole dataset to fit tree
         for i in range(self.n_tress):
-            tree = regressor_tree.Node(data=self.data, max_features=self.max_features, min_samples_split=self.min_samples_split, max_depth=self.max_depth)
-            tree.train()
+            tree = regressor_tree.Node(max_features=self.max_features, min_samples_split=self.min_samples_split, max_depth=self.max_depth)
+            tree.train(X_data, y_data)
             self.fitted_trees.append(tree)
 
         
@@ -65,8 +65,8 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    rf = RandomForestRegressor(data=data, n_trees=2, max_features=1, min_samples_split=2, max_depth=2)
-    rf.train()
+    rf = RandomForestRegressor(n_trees=2, max_features=1, min_samples_split=2, max_depth=2)
+    rf.train(X_train, y_train)
 
     y_pred = rf.predict(X_test=X_train)
 
