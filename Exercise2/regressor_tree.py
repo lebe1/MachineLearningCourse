@@ -29,6 +29,7 @@ class Node():
         if ((len(self.data) >= self.min_samples_split) & (self.height < self.max_depth)):
             # split procedure
             # store results in new leftnode and rightnode
+            dict_sorted_vectors = self.select_random_feature()
 
             data_left, data_right = train_test_split(self.data, test_size=0.5)
 
@@ -49,6 +50,24 @@ class Node():
                 self = self.right_child
 
         return self.prediction
+
+    
+    def select_random_feature(self):
+        X_train = self.data.drop("mpg", axis=1)
+        list_column_names = list(X_train.columns.values)
+
+        if (self.max_features > len(X_train.columns)):
+            # set max_features to number of predictors if it is initialized too large
+            self.max_features = len(X_train.columns)
+        feature_names = random.sample(list_column_names, self.max_features)
+        
+        dict_sorted_vectors = {}
+        for name in feature_names:
+            feature_vector = X_train[name].to_numpy()
+            sorted_feature_vector = np.sort(feature_vector)
+            dict_sorted_vectors[name] = list(sorted_feature_vector)
+
+        return dict_sorted_vectors
 
     
 
@@ -174,7 +193,7 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=2, height=0)
+    root = Node(data=data, max_features=2, min_samples_split=2, max_depth=1, height=0)
     root.train()
     print(root.right_child.flag)
 
