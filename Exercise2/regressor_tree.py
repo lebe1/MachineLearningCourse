@@ -77,9 +77,9 @@ class Node():
         best_feature = list(dict_best_values_per_feature.keys())[0]
 
         for feature_name, dictionary in dict_best_values_per_feature.items():
-            
+                
                 if dictionary["Min SSR"] < global_min_ssr:
-                    global_min_ssr = dictionary["Total SSR"]
+                    global_min_ssr = dictionary["Min SSR"]
                     global_best_split_value = dictionary["Best split"]
                     best_feature = feature_name
 
