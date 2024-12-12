@@ -94,8 +94,13 @@ class Node():
         self.X_data = X_data
         self.y_data = y_data
 
-        if ((len(self.X_data) >= self.min_samples_split) & (self.height < self.max_depth)):
-            # split procedure
+        # First condition checks that data is greater or equals than the min samples split and the tree height is lower than the max depth
+        # Second condition has the same first check on min samples split but checks for max_depth set to None so the tree grows until the min sample split is true
+        if (
+            (len(self.X_data) >= self.min_samples_split and (self.max_depth is None or self.height < self.max_depth))
+            or
+            (len(self.X_data) >= self.min_samples_split and self.max_depth is None)
+        ):                # split procedure
             # store results in new leftnode and rightnode
             dict_averages_per_feature = self.get_average_values_per_feature()
             # Insert split value for current node
