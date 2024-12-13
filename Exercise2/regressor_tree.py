@@ -1,16 +1,14 @@
 import random
 import pandas as pd
 import numpy as np
-import json
 
-from sklearn.model_selection import train_test_split
 
 
 class Node():
 
     def __init__(self, max_features=2, min_samples_split=2, max_depth=2, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
-                 split_value=None, prediction=None) -> None:
+                 split_value=None, prediction=None, random_state=None, node_index=1) -> None:
 
         self.max_features = max_features
         self.min_samples_split = min_samples_split
@@ -23,6 +21,8 @@ class Node():
         self.split_feature = split_feature
         self.split_value = split_value
         self.prediction = prediction
+        self.random_state = random_state
+        self.node_index = node_index
 
         self.X_data = None
         self.y_data = None
@@ -78,10 +78,10 @@ class Node():
 
         for feature_name, dictionary in dict_best_values_per_feature.items():
                 
-                if dictionary["Min SSR"] < global_min_ssr:
-                    global_min_ssr = dictionary["Min SSR"]
-                    global_best_split_value = dictionary["Best split"]
-                    best_feature = feature_name
+            if dictionary["Min SSR"] < global_min_ssr:
+                global_min_ssr = dictionary["Min SSR"]
+                global_best_split_value = dictionary["Best split"]
+                best_feature = feature_name
 
         optimal_split = (best_feature, global_best_split_value)
 
@@ -94,13 +94,16 @@ class Node():
         self.X_data = X_data
         self.y_data = y_data
 
+        # This huge if-statement could not be improved due to the ability to set max_depth to None
         # First condition checks that data is greater or equals than the min samples split and the tree height is lower than the max depth
         # Second condition has the same first check on min samples split but checks for max_depth set to None so the tree grows until the min sample split is true
         if (
             (len(self.X_data) >= self.min_samples_split and (self.max_depth is None or self.height < self.max_depth))
             or
             (len(self.X_data) >= self.min_samples_split and self.max_depth is None)
-        ):                # split procedure
+        ):               
+            
+
             # store results in new leftnode and rightnode
             dict_averages_per_feature = self.get_average_values_per_feature()
             # Insert split value for current node
@@ -115,8 +118,8 @@ class Node():
             data_right_y = self.y_data[self.X_data[self.split_feature] >= self.split_value]
 
 
-            self.left_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
-            self.right_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split)
+            self.left_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, random_state=self.random_state, node_index=(2 * self.node_index))
+            self.right_child = Node(height=self.height + 1, max_features=self.max_features, max_depth=self.max_depth, min_samples_split=self.min_samples_split, random_state=self.random_state, node_index=(2 * self.node_index)+1)
 
             self.left_child.train(data_left_X, data_left_y)
             self.right_child.train(data_right_X, data_right_y)
@@ -143,13 +146,19 @@ class Node():
 
     
     def get_average_values_per_feature(self):
+        # Set random list based on max_depth and random_state
+        if self.random_state is not None:
+            random.seed(self.random_state)
+            random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
         
         list_column_names = list(self.X_data.columns.values)
 
         if (self.max_features > len(self.X_data.columns)):
             # set max_features to number of predictors if it is initialized too large
             self.max_features = len(self.X_data.columns)
+        random.seed(random_list[self.node_index])
         feature_names = random.sample(list_column_names, self.max_features)
+
         
         dict_sorted_vectors = {}
         for name in feature_names:
@@ -178,8 +187,6 @@ class Node():
 
 
 if __name__ == "__main__":
-    random.seed(6)
-
     # define column names for the dataset
     columns = ['mpg', 'cylinders', 'displacement', 'horsepower', 'weight', 'acceleration', 'model_year', 'origin', 'car_name']
 
@@ -192,7 +199,7 @@ if __name__ == "__main__":
     X_train = data.drop('mpg', axis=1)
     y_train  = data["mpg"]
 
-    root = Node(max_features=1, min_samples_split=2, max_depth=2, height=0)
+    root = Node(max_features=1, min_samples_split=2, max_depth=4, height=0, random_state=42)
     root.train(X_train, y_train)
     print("Root flag: ", root.flag)
     print("Left left split value: ", root.left_child.left_child.split_value)
