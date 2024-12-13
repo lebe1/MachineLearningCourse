@@ -150,13 +150,14 @@ class Node():
         if self.random_state is not None:
             random.seed(self.random_state)
             random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
+            random.seed(random_list[self.node_index])
         
         list_column_names = list(self.X_data.columns.values)
 
         if (self.max_features > len(self.X_data.columns)):
             # set max_features to number of predictors if it is initialized too large
             self.max_features = len(self.X_data.columns)
-        random.seed(random_list[self.node_index])
+        
         feature_names = random.sample(list_column_names, self.max_features)
 
         
