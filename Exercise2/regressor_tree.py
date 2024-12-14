@@ -6,7 +6,7 @@ import numpy as np
 
 class Node():
 
-    def __init__(self, max_features=2, min_samples_split=2, max_depth=2, height=0, 
+    def __init__(self, max_features=1, min_samples_split=2, max_depth=5, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None, random_state=None, node_index=1) -> None:
 
