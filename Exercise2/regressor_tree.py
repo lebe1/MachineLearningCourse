@@ -149,7 +149,11 @@ class Node():
         # Set random list based on max_depth and random_state
         if self.random_state is not None:
             random.seed(self.random_state)
-            random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
+            if self.max_depth is not None:
+                random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
+            else:
+                # else statement to enable setting max_depth to None
+                random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(100 + 1) - 1)] 
             random.seed(random_list[self.node_index])
         
         list_column_names = list(self.X_data.columns.values)
