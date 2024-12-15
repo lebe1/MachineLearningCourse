@@ -6,7 +6,7 @@ import numpy as np
 
 class Node():
 
-    def __init__(self, max_features=2, min_samples_split=2, max_depth=2, height=0, 
+    def __init__(self, max_features=1, min_samples_split=2, max_depth=5, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None, random_state=None, node_index=1) -> None:
 
@@ -149,7 +149,11 @@ class Node():
         # Set random list based on max_depth and random_state
         if self.random_state is not None:
             random.seed(self.random_state)
-            random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
+            if self.max_depth is not None:
+                random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(self.max_depth + 1) - 1)]
+            else:
+                # else statement to enable setting max_depth to None
+                random_list = [random.randint(0, 2**32 - 1) for _ in range(2**(100 + 1) - 1)] 
             random.seed(random_list[self.node_index])
         
         list_column_names = list(self.X_data.columns.values)
