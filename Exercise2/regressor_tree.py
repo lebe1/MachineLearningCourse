@@ -253,7 +253,6 @@ if __name__ == "__main__":
     # read data 
     data = pd.read_csv('auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
 
-    # TODO solve this for the following columns dropped for now
     data.drop(["horsepower", "car_name"], axis=1, inplace=True)
 
     X_train = data.drop('mpg', axis=1)
@@ -267,14 +266,3 @@ if __name__ == "__main__":
     print("Left left prediciton value: ", root.left_child.left_child.prediction)
     print("Left left flag; ", root.left_child.left_child.flag)
 
-
-# TODO 1. add values to leaves -> Leon
-# TODO 2. add random forest skeleton -> Can 
-# TODO 3. find a 2. dataset and prepare everything for presentation and experiment
-# TODO 4. clean first dataset for experiment -> Marga
-
-# 1. Run experiments with both datasets on two metrices (runtime + RMSE + R-squared)
-# Think about hyper parameter tuning
-# 2. Let LLM create RandomForestTree Regressor and run over both datasets
-# 3. Use scikit learn model and run over both datasets
-# 4. Create presentation

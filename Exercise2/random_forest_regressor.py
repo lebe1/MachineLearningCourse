@@ -70,7 +70,6 @@ if __name__ == "__main__":
     # read data 
     data = pd.read_csv('auto-mpg.data', sep='\\s+', header=None, names=columns, quotechar='"')
 
-    # TODO solve this for the following columns dropped for now
     data.drop(["horsepower", "car_name"], axis=1, inplace=True)
 
     X_train = data.drop('mpg', axis=1)
