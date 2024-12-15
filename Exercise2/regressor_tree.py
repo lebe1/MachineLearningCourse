@@ -104,7 +104,7 @@ class Node():
         global_min_ssr = dict_best_values_per_feature[str(next(iter(dict_best_values_per_feature)))]["Min SSR"]
         global_best_split_value = dict_best_values_per_feature[next(iter(dict_best_values_per_feature))]["Best split"]
 
-        # Get first key of dictionary, which is the first feature name
+        # Get first key of dictionary as placeholder, which is the first feature name
         best_feature = list(dict_best_values_per_feature.keys())[0]
 
         for feature_name, dictionary in dict_best_values_per_feature.items():
