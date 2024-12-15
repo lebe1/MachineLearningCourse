@@ -5,10 +5,31 @@ import numpy as np
 
 
 class Node():
+    """
+    Represents a single node which is recursively extended with children nodes to form a decision tree for a Random Forest Regressor.
+    """
 
     def __init__(self, max_features=1, min_samples_split=2, max_depth=5, height=0, 
                  left_child=None, right_child=None, flag="Internal", split_feature=None, 
                  split_value=None, prediction=None, random_state=None, node_index=1) -> None:
+
+        """
+        Initializes instance of class Node with the provided parameters.
+
+        Args:
+            max_features (int): The maximum number of features to consider when splitting.
+            min_samples_split (int): The minimum number of samples required to split a node.
+            max_depth (int): The maximum depth of the tree. None means no limit.
+            height (int): The height of a node in the tree.
+            left_child (Node): Reference to the left child node.
+            right_child (Node): Reference to the right child node.
+            flag (str): Indicates whether the node is "Internal" or a "Leaf".
+            split_feature (str): The feature used for splitting at an internal node.
+            split_value (float): The value used to split the data at an internal node.
+            prediction (float): The prediction value if the node is a leaf.
+            random_state (int or None): Random seed for reproducibility.
+            node_index (int): The index of the node within the tree.
+        """
 
         self.max_features = max_features
         self.min_samples_split = min_samples_split
@@ -27,8 +48,18 @@ class Node():
         self.X_data = None
         self.y_data = None
     
+
     def get_optimal_split_value(self, dict_averages_per_feature):
-        # dict structure: feature_name: [(split_val_1, ssr_1), (split_val_2, ssr_2), ...]
+        """
+        Identifies the optimal feature and value to split the data at an internal node.
+
+        Args:
+            dict_averages_per_feature (dict): A dictionary mapping feature names to a list of average split values for potential splits.
+
+        Returns:
+            optimal_split (tuple): A tuple containing the best feature to split on and the corresponding split value.
+        """
+
         dict_ssrs_per_feature = {}
 
         # iterate over key-value-pairs of dict
@@ -85,11 +116,18 @@ class Node():
 
         optimal_split = (best_feature, global_best_split_value)
 
-        #return tuple_optimal_split
         return optimal_split
 
+
     def train(self, X_data, y_data):
-        
+        """
+        Trains the Regressor Tree recursively by splitting the data and creating child nodes.
+
+        Args:
+            X_data: The predictors to be used for training.
+            y_data: The target variable corresponding to X_data.
+        """
+
         # Set data instances
         self.X_data = X_data
         self.y_data = y_data
@@ -132,6 +170,16 @@ class Node():
 
 
     def predict(self, X_test):
+        """
+        Iterates over each test set observation and predicts target value by traversing the tree until leaf node.
+
+        Args:
+            X_test: The predictor data for which predictions should be made.
+
+        Returns:
+            y_pred (list): List of predicted target values corresponding to X_test.
+        """
+
         y_pred = []
         for index, row in X_test.iterrows():
             while (self.flag != "Leaf"):
@@ -146,6 +194,13 @@ class Node():
 
     
     def get_average_values_per_feature(self):
+        """
+        Randomly selects a subset of features based on the max_features parameter and calculates the mean of consecutive sorted values for potential splits for each feature
+
+        Returns:
+            dict_averages_per_feature: A dictionary where keys are feature names and values are lists of average split values.
+        """
+
         # Set random list based on max_depth and random_state
         if self.random_state is not None:
             random.seed(self.random_state)

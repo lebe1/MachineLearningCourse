@@ -39,8 +39,6 @@ class RandomForestRegressor():
             random_list = [None] * self.n_trees
 
 
-
-
         # Create list of trees and store in the fitted_trees attribute
         for i in range(self.n_trees):
             tree = regressor_tree.Node(
