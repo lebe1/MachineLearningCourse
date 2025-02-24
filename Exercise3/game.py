@@ -7,6 +7,9 @@ class TicTacToe():
         self.player0 = -1
         self.player1 = 1
         self.EndFlag = False
+        self.winner = 0
+        self.history = list()
+
 
 
 
@@ -24,14 +27,16 @@ class TicTacToe():
             # Pick random index
             random_index = random.choices(empty_cells)
 
-            if not game.board[random_index[0][0]][random_index[0][1]]:
-                # This condition is true, when the spot of the board has been placed yet
-                # Set the number of the player inside the board spot i.e. matrix cell
-                game.board[random_index[0][0]][random_index[0][1]] = player
+            self.board[random_index[0][0]][random_index[0][1]] = player
+
+            self.history.append(''.join(str(int(num)) for row in self.board for num in row))
+
 
         # When only 5 cells left, first player is able to win
         if len(empty_cells) <= 5: 
-           self.checkState(player)
+           self.winner = self.checkState(player)
+
+        
 
     def checkState(self, player):       
         # 1. Check: Sum up all horizontally
@@ -39,16 +44,22 @@ class TicTacToe():
             if sum(self.board[i, :]) in [3, -3]:
                 print(f"Player {player} won horizontally")
                 self.EndFlag = True
+                return player
             elif sum(self.board[:, i]) in [3, -3]:
                 print(f"Player {player} won vertically")
                 self.EndFlag = True
+                return player
         
         if sum(self.board.diagonal()) in [3, -3]:
             print(f"Player {player} won diagonally left top to bottom right")
             self.EndFlag = True
+            return player
         elif sum(np.fliplr(self.board).diagonal()) in [3, -3]:
             print(f"Player {player} won diagonally right top to bottom left")
             self.EndFlag = True
+            return player
+        
+        return 0
 
         
 
@@ -63,11 +74,12 @@ class TicTacToe():
                     self.move(self.player0)
                 else:
                     self.move(self.player1)
-            print(self.board)
+        print(self.board)
             
+        return self.history, self.winner
 
 
 if __name__ == "__main__":
     game = TicTacToe()
 
-    game.play()
+    print(game.play())
