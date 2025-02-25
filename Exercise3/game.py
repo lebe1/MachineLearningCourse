@@ -24,18 +24,28 @@ class TicTacToe():
             print("It's a draw")
             self.EndFlag = True
         else:
-            # Pick random index
-            random_index = random.choices(empty_cells)
+            self.history.append(','.join(str(int(num)) for row in self.board for num in row))
 
+            # Pick random index
+            random.seed(42)
+            random_index = random.choices(empty_cells)
             self.board[random_index[0][0]][random_index[0][1]] = player
 
-            self.history.append(''.join(str(int(num)) for row in self.board for num in row))
-
+            # self.placement(player, random_index[0][0], random_index[0][1])
 
         # When only 5 cells left, first player is able to win
         if len(empty_cells) <= 5: 
            self.winner = self.checkState(player)
 
+
+    def placement(self, player, new_state):
+        #self.board[row][column] = player
+        self.board = new_state
+
+        empty_cells = np.argwhere(self.board == 0)
+        if len(empty_cells) <= 5: 
+           self.winner = self.checkState(player)
+        
         
 
     def checkState(self, player):       
@@ -44,22 +54,22 @@ class TicTacToe():
             if sum(self.board[i, :]) in [3, -3]:
                 print(f"Player {player} won horizontally")
                 self.EndFlag = True
-                return player
+                return 0 if player == 1 else 1
             elif sum(self.board[:, i]) in [3, -3]:
                 print(f"Player {player} won vertically")
                 self.EndFlag = True
-                return player
+                return 0 if player == 1 else 1
         
         if sum(self.board.diagonal()) in [3, -3]:
             print(f"Player {player} won diagonally left top to bottom right")
             self.EndFlag = True
-            return player
+            return 0 if player == 1 else 1
         elif sum(np.fliplr(self.board).diagonal()) in [3, -3]:
             print(f"Player {player} won diagonally right top to bottom left")
             self.EndFlag = True
-            return player
+            return 0 if player == 1 else 1
         
-        return 0
+        return 0.5
 
         
 
@@ -68,6 +78,7 @@ class TicTacToe():
         for i in range(9):
             
             if self.EndFlag:
+                self.history.append(','.join(str(int(num)) for row in self.board for num in row))
                 break
             else:   
                 if i % 2 == 0:
