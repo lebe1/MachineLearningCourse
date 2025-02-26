@@ -12,6 +12,7 @@ class TicTacToeAgent():
         self.board_states={}
         self.alpha=0.5
         self.exploration_rate = exploration_rate
+        self.winners_list=list()
 
     def move(self, player, seed):
 
@@ -214,8 +215,8 @@ class TicTacToeAgent():
                     user_input_column = int(input("Enter column number [0, 1, 2]: "))
                     self.manual_move(1, user_input_row, user_input_column)
                     print(self.board)
-                    
 
+        self.winners_list.append(self.winner)            
         # Reset all game instances
         self.EndFlag = False
         self.board = np.zeros((3,3))
@@ -225,8 +226,8 @@ class TicTacToeAgent():
         
 
 if __name__ == "__main__":
-    RANDOM_SEED = 63
-    agent = TicTacToeAgent(exploration_rate=0.2)
+    RANDOM_SEED = 42
+    agent = TicTacToeAgent(exploration_rate=0.3)
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
@@ -235,8 +236,9 @@ if __name__ == "__main__":
 
     for seed in random_seed_list:
         agent.play(seed)
-
-    with open("output.txt", "a") as f:
-        print(agent.board_states, file=f)
+    # with open("output.json", "a") as f:
+    #     print(agent.board_states, file=f)
+    with open("winner.txt", "a") as f:
+        print(agent.winners_list, file=f)
   
 
