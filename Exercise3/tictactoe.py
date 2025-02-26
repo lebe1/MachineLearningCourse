@@ -21,7 +21,7 @@ class TicTacToeAgent():
         # First, check if any cell is still empty 
         if len(empty_cells) == 0:
             # It's a draw
-            print("It's a draw MOVE")
+            print("It's a (potential) draw")
             self.EndFlag = True
             self.history.append(','.join(str(int(num)) for row in self.board for num in row))
         else:
@@ -35,6 +35,36 @@ class TicTacToeAgent():
         # When only 5 cells left, first player is able to win
         if len(empty_cells) < 5: 
            self.winner = self.checkState(player)
+        
+        if len(empty_cells) == 0:
+            print("It's a (potential) draw")
+            self.EndFlag = True
+
+
+    def manual_move(self, player, user_input_row, user_input_col):
+
+        self.history.append(','.join(str(int(num)) for row in self.board for num in row))
+
+        # only place user marker when input position is valid (matrix empty at that position)
+        while (self.board[user_input_row][user_input_col] != 0):
+            print("Input invalid. Please choose a valid position for your marker.")
+            user_input_row = int(input("Enter row number [0, 1, 2]: "))
+            user_input_col = int(input("Enter column number [0, 1, 2]: "))
+        
+        self.board[user_input_row][user_input_col] = player
+
+        empty_cells = np.argwhere(self.board == 0)
+
+        # check if there's a winner
+        if len(empty_cells) < 5: 
+           self.winner = self.checkState(player)
+
+        # check if there's a draw
+        # EndFlag = True twice if last move was winning move
+        if len(empty_cells) == 0:
+            print("It's a (potential) draw")
+            self.EndFlag = True
+
 
 
     def placement(self, player, new_state):
@@ -47,8 +77,9 @@ class TicTacToeAgent():
         if len(empty_cells) < 5: 
            self.winner = self.checkState(player)
 
+        # EndFlag = True twice if last move was winning move
         if len(empty_cells) == 0:
-            print("It's a draw PLACEMENT")
+            print("It's a (potential) draw")
             self.EndFlag = True
 
         print("PLACEMENT ", self.board)
@@ -172,9 +203,18 @@ class TicTacToeAgent():
                     self.placement(-1, new_state)
                     
                 else:
-                    print("PLAYER RANDOM IS MOVING")
-                    self.move(1,seed)
+                    # print("PLAYER RANDOM IS MOVING")
+                    # self.move(1,seed)
+                    # print(self.board)
+
+                    print("MANUAL USER IS MOVING")
+                    print("Current board")
                     print(self.board)
+                    user_input_row = int(input("Enter row number [0, 1, 2]: "))
+                    user_input_column = int(input("Enter column number [0, 1, 2]: "))
+                    self.manual_move(1, user_input_row, user_input_column)
+                    print(self.board)
+                    
 
         # Reset all game instances
         self.EndFlag = False
@@ -190,7 +230,7 @@ if __name__ == "__main__":
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
-    random_seed_list=random.sample(range(1,10000), 100)
+    random_seed_list=random.sample(range(1,10000), 1)
 
 
     for seed in random_seed_list:
