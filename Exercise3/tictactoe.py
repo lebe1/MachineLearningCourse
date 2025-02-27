@@ -3,9 +3,11 @@ import random
 
 DRAW_VALUE_FIRST_PLAYER = 0.1
 DRAW_VALUE_SECOND_PLAYER = 0.6
+VALUE_THRESHOLD = 0.001
 LEARNING_RATE = 0.5
 EXPLORATION_RATE = 0.1
 RANDOM_SEED = 67
+NUMBER_OF_ITERATIONS = 10000
 
 class TicTacToeAgent():
     def __init__(self):
@@ -167,6 +169,11 @@ class TicTacToeAgent():
                         best_state = next_state
                         best_value = board_states[next_state]["value"]
 
+                # Set threshold to make sure, we do not repeat playing loosing games
+                if best_value < VALUE_THRESHOLD:
+                   self.random_move(player_score, seed)
+                   return np.zeros((3,3))
+
             matrix_best_state = self.restore_matrix_from_hashed_state(best_state)
 
             # Rotate matrix back i.e. take absolute value of - 4 to have a 360° rotation 
@@ -317,7 +324,7 @@ if __name__ == "__main__":
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
-    random_seed_list=random.sample(range(1,1000000), 100)
+    random_seed_list=random.sample(range(1,1000000), NUMBER_OF_ITERATIONS)
 
     for seed in random_seed_list:      
         agent.play(seed, "learning_agent1", "learning_agent2", EXPLORATION_RATE)

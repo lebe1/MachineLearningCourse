@@ -1,5 +1,5 @@
 import ast
-import  matplotlib.pyplot  as plt
+import matplotlib.pyplot  as plt
 import numpy as np
 
 with open("winner.txt", "r") as f:
