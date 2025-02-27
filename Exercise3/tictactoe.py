@@ -3,8 +3,9 @@ import random
 
 DRAW_VALUE_FIRST_PLAYER = 0.1
 DRAW_VALUE_SECOND_PLAYER = 0.6
-VALUE_THRESHOLD = 0.001
-ALPHA = 0.5
+LEARNING_RATE = 0.5
+EXPLORATION_RATE = 0.1
+RANDOM_SEED = 67
 
 class TicTacToeAgent():
     def __init__(self):
@@ -28,12 +29,15 @@ class TicTacToeAgent():
 
         # Pick random index
         random.seed(seed)
-        print("random_move seed", seed)
         random_index = random.choices(empty_cells)
         self.board[random_index[0][0]][random_index[0][1]] = player
 
+        # Update empty cells after placing the move
+        empty_cells = np.argwhere(self.board == 0)
+
         # When only 5 cells are left, first player is able to win, so we check for it
         if len(empty_cells) < 5: 
+           print("Entering empty cells < 5", empty_cells)
            self.winner = self.checkState(player)
         
         if len(empty_cells) == 0:
@@ -109,40 +113,33 @@ class TicTacToeAgent():
 
     def explore_move(self, player_name, seed, exploration_rate):
         np.random.seed(seed)
-        print("explore move seed", seed)
         random_uniform = np.random.uniform(low=0, high=1)
-        print("UNIFORM", random_uniform, exploration_rate)
         if random_uniform <= exploration_rate:
             # random move
             if "1" in player_name:
+                print("Entering random uniform, now doing random move")
                 self.random_move(-1, seed)
             else:
                 self.random_move(1, seed)
-            print("RANDOM UNIFORM ")
-            #print(self.board)
+            print("RANDOM UNIFORM")
+
             return np.zeros((3,3))
 
         else:
-
-
             if "1" in player_name: 
                 return self.choose_greedy_move(self.board_states1, -1, seed)
             else:
                 return self.choose_greedy_move(self.board_states2, 1, seed)
 
     def rotate_current_state_for_placing(self, board_states):
-        print("ORIGINAL BOARD ", self.board)
-
         beginning_state = ','.join(str(int(num)) for row in self.board for num in row)
 
         # Check if current state has been played before by rotating it
         if board_states.get(beginning_state) is not None:
             return 0, beginning_state
         for i in range(1,4):
-            print("ROTATE BOARD ", np.rot90(self.board,i))
             rotated_state = ','.join(str(int(num)) for row in np.rot90(self.board,i) for num in row)
             if board_states.get(rotated_state) is not None:
-                print("Found a state by rotating", i, " times")
                 return i, rotated_state
         
         # If nothing passes, this state has never been played before and needs to be saved
@@ -162,7 +159,6 @@ class TicTacToeAgent():
             print("CHECK ",board_states.get(current_state))
             # make random move if the current state hasn't been encountered yet
             if board_states.get(current_state) is None and number_of_rotations == -1:
-                print("first move")
                 self.random_move(player_score, seed)
                 return np.zeros((3,3))
             else:
@@ -170,28 +166,16 @@ class TicTacToeAgent():
                     if (board_states[next_state]["value"] > best_value):
                         best_state = next_state
                         best_value = board_states[next_state]["value"]
-                
-                # Set threshold to make sure, we do not repeat playing loosing games
-                if best_value < VALUE_THRESHOLD:
-                   self.random_move(player_score, seed)
-                   return np.zeros((3,3))
 
-            matrix_best_state = []
-
-            best_state = best_state.split(",")
-
-            for letter in best_state:
-                matrix_best_state.append(int(letter))
-
-            matrix_best_state = np.array(matrix_best_state).reshape(3, 3)
+            matrix_best_state = self.restore_matrix_from_hashed_state(best_state)
 
             # Rotate matrix back i.e. take absolute value of - 4 to have a 360° rotation 
             matrix_best_state_original_rotation = np.rot90(matrix_best_state, abs(number_of_rotations-4))
             return matrix_best_state_original_rotation
         
 
-    def rotate_state_for_history(self, state, number_of_rotations):
-        
+    def restore_matrix_from_hashed_state(self, state):
+
         restored_matrix = []
 
         splitted_state = state.split(",")
@@ -199,11 +183,13 @@ class TicTacToeAgent():
         for letter in splitted_state:
             restored_matrix.append(int(letter))
 
-        restored_matrix = np.array(restored_matrix).reshape(3, 3)
-        # print("RESTORED MATRIX")
-        # print(restored_matrix)
-        # print("ROTATED MATRIX")
-        # print(np.rot90(restored_matrix,number_of_rotations))
+        restored_matrix = np.array(restored_matrix).reshape(3, 3)   
+
+        return restored_matrix     
+
+    def rotate_state_for_history(self, state, number_of_rotations):
+
+        restored_matrix = self.restore_matrix_from_hashed_state(state)
 
         rotated_state = ','.join(str(int(num)) for row in np.rot90(restored_matrix,number_of_rotations) for num in row)
 
@@ -217,14 +203,7 @@ class TicTacToeAgent():
             if board_states.get(state) is not None:
                 return 0
 
-            restored_matrix = []
-
-            splitted_state = state.split(",")
-
-            for letter in splitted_state:
-                restored_matrix.append(int(letter))
-
-            restored_matrix = np.array(restored_matrix).reshape(3, 3)
+            restored_matrix = self.restore_matrix_from_hashed_state(state)
 
             # Check if current state has been played before by rotating it
             for i in range(1,4):
@@ -238,12 +217,8 @@ class TicTacToeAgent():
 
     def calculate_state_values(self, player_name):
         is_player1 = "1" in player_name
-        print("is_player1 ", is_player1)
         board_states = self.board_states1 if is_player1 else self.board_states2
         draw_value = DRAW_VALUE_FIRST_PLAYER if is_player1 else DRAW_VALUE_SECOND_PLAYER
-
-        print("HISTORY", self.history)
-
         number_of_rotations = self.check_necessary_rotations(board_states)
         
         for index, state in enumerate(reversed(self.history)):
@@ -258,27 +233,17 @@ class TicTacToeAgent():
             if index == 0:
                 board_states[state]['value'] = draw_value if self.winner == 0.5 else (self.winner if is_player1 else (0 if self.winner == 1 else 1))
             else:
-                board_states[state]['value'] += ALPHA * (board_states[old_state]['value'] - board_states[state]['value'])
+                board_states[state]['value'] += LEARNING_RATE * (board_states[old_state]['value'] - board_states[state]['value'])
                 board_states[state]['next_states'].add(old_state)
-            
-            
+                        
             old_state = state
             
 
-
-
-
     def learning_agent_move(self, player_name, exploration_rate, seed):
 
-        # TODO: Do you know this state? 
-        # Yes, then look at the next best states
-        # No, then rotate the state three times and check if you have seen one of these states before
-        # Take this rotated state and the degrees of rotation as an input
-        # current_state = ','.join(str(int(num)) for row in self.board for num in row)
-
         new_state = self.explore_move(player_name, seed, exploration_rate)
-        # Catch case of all zero matrix meaning a random move had to be drawn
         
+        # Catch case of all zero matrix meaning a random move had to be drawn
         if np.all(new_state == 0):
             return 0
         
@@ -333,10 +298,10 @@ class TicTacToeAgent():
 
         # Calculate state values for learning agents
         if "learning" in player1:
-            print("LEARNING AGENT 1")
+            print("LEARNING AGENT 1 calculating state values")
             self.calculate_state_values(player1)
         if "learning" in player2:
-            print("LEARNING AGENT 2")
+            print("LEARNING AGENT 2 calculating state values")
             self.calculate_state_values(player2)
  
         # Reset all game instances
@@ -346,28 +311,16 @@ class TicTacToeAgent():
         self.history = list()
 
 
-        
-
 
 if __name__ == "__main__":
-    RANDOM_SEED = 67
     agent = TicTacToeAgent()
-
-
-
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
-    random_seed_list=random.sample(range(1,1000000), 10000)
-    
+    random_seed_list=random.sample(range(1,1000000), 100)
 
-
-    for seed in random_seed_list:
-        print("SEED",seed)
-        
-        agent.play(seed, "learning_agent1", "learning_agent2", 0.1)
-    
-
+    for seed in random_seed_list:      
+        agent.play(seed, "learning_agent1", "learning_agent2", EXPLORATION_RATE)
 
     with open('output_board_states2.json', 'w') as f:
         f.write(str(agent.board_states2))
@@ -381,5 +334,5 @@ if __name__ == "__main__":
 
 
     agent.play(51, "user", "learning_agent2", 0)
-    agent.play(51, "learning_agent1", "user", 0)
+    # agent.play(51, "learning_agent1", "user", 0)
 
