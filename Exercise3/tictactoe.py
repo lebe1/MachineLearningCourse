@@ -111,7 +111,7 @@ class TicTacToeAgent():
         print("explore move seed", seed)
         random_uniform = np.random.uniform(low=0, high=1)
         print("UNIFORM", random_uniform, exploration_rate)
-        if random_uniform >= exploration_rate:
+        if random_uniform <= exploration_rate:
             # random move
             if "1" in player_name:
                 self.random_move(-1, seed)
@@ -125,12 +125,12 @@ class TicTacToeAgent():
 
 
             if "1" in player_name: 
-                return self.choose_greedy_move(self.board_states1, current_state, -1)
+                return self.choose_greedy_move(self.board_states1, current_state, -1,seed)
             else:
-                return self.choose_greedy_move(self.board_states2, current_state, 1)
+                return self.choose_greedy_move(self.board_states2, current_state, 1,seed)
 
             
-    def choose_greedy_move(self, board_states, current_state, player_score):
+    def choose_greedy_move(self, board_states, current_state, player_score, seed):
             
             # greedy move according to best value
             best_value = -1000000
@@ -161,6 +161,7 @@ class TicTacToeAgent():
 
     def calculate_state_values(self, player_name):
         is_player1 = "1" in player_name
+        print("is_player1 ", is_player1)
         board_states = self.board_states1 if is_player1 else self.board_states2
         draw_value = DRAW_VALUE_FIRST_PLAYER if is_player1 else DRAW_VALUE_SECOND_PLAYER
 
@@ -175,14 +176,20 @@ class TicTacToeAgent():
             
             if index == 0:
                 print("INDEX")
+                print("Value beginning INDEX", board_states[state]['value'])
+                print("Winner INDEX", self.winner)
                 board_states[state]['value'] = draw_value if self.winner == 0.5 else (self.winner if is_player1 else (0 if self.winner == 1 else 1))
+                print("Value afterwards INDEX", board_states[state]['value'])
+
             else:
                 print("Value beginning", board_states[state]['value'])
                 board_states[state]['value'] += self.alpha * (board_states[old_state]['value'] - board_states[state]['value'])
                 board_states[state]['next_states'].add(old_state)
                 print("Value afterwards", board_states[state]['value'])
             
+            
             old_state = state
+            
 
 
 
@@ -191,9 +198,14 @@ class TicTacToeAgent():
         current_state = ','.join(str(int(num)) for row in self.board for num in row)
         new_state = self.explore_move(current_state, player_name, seed, exploration_rate)
         # Catch case of all zero matrix meaning a random move had to be drawn
+        
         if np.all(new_state == 0):
-            return 
-        self.placement(-1, new_state)
+            return 0
+        
+        if "1" in player_name:
+            self.placement(-1, new_state)
+        else: 
+            self.placement(1, new_state)
         
 
     def play(self,seed, player1, player2, exploration_rate):
@@ -266,24 +278,27 @@ if __name__ == "__main__":
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
-    random_seed_list=random.sample(range(1,1000000), 10000)
+    random_seed_list=random.sample(range(1,1000000), 20000)
     
 
 
     for seed in random_seed_list:
         print("SEED",seed)
         
-        agent.play(seed, "learning_agent1", "learning_agent2", 0.5)
+        agent.play(seed, "learning_agent1", "learning_agent2", 0.1)
     
 
 
     print("######################")
     with open('output.json', 'w') as f:
-        f.write(str(agent.board_states1))
-    print(agent.board_states1)
+        f.write(str(agent.board_states2))
+    #print(agent.board_states2)
 
-    agent.play(42, "learning_agent1", "user", 1)
-    agent.play(51, "user", "learning_agent2", 1)
+    with open('winner.txt', 'w') as f:
+        f.write(str(agent.winners_list))
+
+    # agent.play(42, "learning_agent1", "user", 1)
+    #agent.play(51, "user", "learning_agent2", 1)
 
   
   
