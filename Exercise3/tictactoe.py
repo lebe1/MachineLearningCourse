@@ -1,8 +1,9 @@
 import numpy as np
 import random 
 
-DRAW_VALUE_FIRST_PLAYER = 0.2
-DRAW_VALUE_SECOND_PLAYER = 0.6
+DRAW_VALUE_FIRST_PLAYER = 0.1
+DRAW_VALUE_SECOND_PLAYER = 0.4
+VALUE_THRESHOLD = 0.001
 
 class TicTacToeAgent():
     def __init__(self):
@@ -106,7 +107,7 @@ class TicTacToeAgent():
         return 0.5
   
 
-    def explore_move(self, current_state, player_name, seed, exploration_rate):
+    def explore_move(self, player_name, seed, exploration_rate):
         np.random.seed(seed)
         print("explore move seed", seed)
         random_uniform = np.random.uniform(low=0, high=1)
@@ -125,20 +126,42 @@ class TicTacToeAgent():
 
 
             if "1" in player_name: 
-                return self.choose_greedy_move(self.board_states1, current_state, -1,seed)
+                return self.choose_greedy_move(self.board_states1, -1, seed)
             else:
-                return self.choose_greedy_move(self.board_states2, current_state, 1,seed)
+                return self.choose_greedy_move(self.board_states2, 1, seed)
+
+    def rotate_current_state_for_placing(self, board_states):
+        print("ORIGINAL BOARD ", self.board)
+
+        beginning_state = ','.join(str(int(num)) for row in self.board for num in row)
+
+        # Check if current state has been played before by rotating it
+        if board_states.get(beginning_state) is not None:
+            return 0, beginning_state
+        for i in range(1,4):
+            print("ROTATE BOARD ", np.rot90(self.board,i))
+            rotated_state = ','.join(str(int(num)) for row in np.rot90(self.board,i) for num in row)
+            if board_states.get(rotated_state) is not None:
+                print("Found a state by rotating", i, " times")
+                return i, rotated_state
+        
+        # If nothing passes, this state has never been played before and needs to be saved
+        return -1, beginning_state
+        
 
             
-    def choose_greedy_move(self, board_states, current_state, player_score, seed):
+    def choose_greedy_move(self, board_states, player_score, seed):
             
             # greedy move according to best value
-            best_value = -1000000
+            best_value = -1
             best_state = ""
+
+            
+            number_of_rotations, current_state = self.rotate_current_state_for_placing(board_states)
 
             print("CHECK ",board_states.get(current_state))
             # make random move if the current state hasn't been encountered yet
-            if board_states.get(current_state) is None:
+            if board_states.get(current_state) is None and number_of_rotations == -1:
                 print("first move")
                 self.random_move(player_score, seed)
                 return np.zeros((3,3))
@@ -147,6 +170,11 @@ class TicTacToeAgent():
                     if (board_states[next_state]["value"] > best_value):
                         best_state = next_state
                         best_value = board_states[next_state]["value"]
+                
+                # Set threshold to make sure, we do not repeat playing loosing games
+                if best_value < VALUE_THRESHOLD:
+                   self.random_move(player_score, seed)
+                   return np.zeros((3,3))
 
             matrix_best_state = []
 
@@ -156,7 +184,59 @@ class TicTacToeAgent():
                 matrix_best_state.append(int(letter))
 
             matrix_best_state = np.array(matrix_best_state).reshape(3, 3)
-            return matrix_best_state
+
+            # Rotate matrix back i.e. take absolute value of - 4 to have a 360° rotation 
+            matrix_best_state_original_rotation = np.rot90(matrix_best_state, abs(number_of_rotations-4))
+            return matrix_best_state_original_rotation
+        
+
+    def rotate_state_for_history(self, state, number_of_rotations):
+        
+        restored_matrix = []
+
+        splitted_state = state.split(",")
+
+        for letter in splitted_state:
+            restored_matrix.append(int(letter))
+
+        restored_matrix = np.array(restored_matrix).reshape(3, 3)
+        print("RESTORED MATRIX")
+        print(restored_matrix)
+        print("ROTATED MATRIX")
+        print(np.rot90(restored_matrix,number_of_rotations))
+
+        rotated_state = ','.join(str(int(num)) for row in np.rot90(restored_matrix,number_of_rotations) for num in row)
+
+        return rotated_state
+    
+    def check_necessary_rotations(self, board_states):
+        for index, state in enumerate(self.history):
+            if index == 0:
+                continue
+
+            if board_states.get(state) is not None:
+                return 0
+
+            restored_matrix = []
+
+            splitted_state = state.split(",")
+
+            for letter in splitted_state:
+                restored_matrix.append(int(letter))
+
+            restored_matrix = np.array(restored_matrix).reshape(3, 3)
+
+            # Check if current state has been played before by rotating it
+            for i in range(1,4):
+                print("ROTATE RESTORED MATRIX ", np.rot90(restored_matrix,i))
+                rotated_state = ','.join(str(int(num)) for row in np.rot90(restored_matrix,i) for num in row)
+                if board_states.get(rotated_state) is not None:
+                    print("Found a state by rotating RESTORED MATRIX", i)
+                    return i
+                
+        # If no state has ever been played return 0 
+        print("NO state has ever been played#################")
+        return 0
         
 
     def calculate_state_values(self, player_name):
@@ -166,16 +246,25 @@ class TicTacToeAgent():
         draw_value = DRAW_VALUE_FIRST_PLAYER if is_player1 else DRAW_VALUE_SECOND_PLAYER
 
         print("HISTORY", self.history)
+
+        number_of_rotations = self.check_necessary_rotations(board_states)
         
         for index, state in enumerate(reversed(self.history)):
-            print("State", state)
+            print("State before rotation", state)
+
+            # Only rotate the game states if
+            if number_of_rotations != 0:
+                state = self.rotate_state_for_history(state, number_of_rotations)
+
+            print("State after rotation", state)
+            
             
             if board_states.get(state) is None:
-                print("EMPTY BOARD STATE")
+                print("STATE HAS NEVER BEEN PLAYED BEFORE")
                 board_states[state] = {'value': 0, 'next_states': set()}
             
             if index == 0:
-                print("INDEX")
+                print("INDEX == 0")
                 print("Value beginning INDEX", board_states[state]['value'])
                 print("Winner INDEX", self.winner)
                 board_states[state]['value'] = draw_value if self.winner == 0.5 else (self.winner if is_player1 else (0 if self.winner == 1 else 1))
@@ -195,8 +284,14 @@ class TicTacToeAgent():
 
 
     def learning_agent_move(self, player_name, exploration_rate, seed):
-        current_state = ','.join(str(int(num)) for row in self.board for num in row)
-        new_state = self.explore_move(current_state, player_name, seed, exploration_rate)
+
+        # TODO: Do you know this state? 
+        # Yes, then look at the next best states
+        # No, then rotate the state three times and check if you have seen one of these states before
+        # Take this rotated state and the degrees of rotation as an input
+        # current_state = ','.join(str(int(num)) for row in self.board for num in row)
+
+        new_state = self.explore_move(player_name, seed, exploration_rate)
         # Catch case of all zero matrix meaning a random move had to be drawn
         
         if np.all(new_state == 0):
@@ -278,28 +373,28 @@ if __name__ == "__main__":
 
     # Set random seed for reproducibility
     random.seed(RANDOM_SEED)
-    random_seed_list=random.sample(range(1,1000000), 20000)
+    random_seed_list=random.sample(range(1,1000000), 10000)
     
 
 
     for seed in random_seed_list:
         print("SEED",seed)
         
-        agent.play(seed, "learning_agent1", "learning_agent2", 0.1)
+        agent.play(seed, "learning_agent1", "learning_agent2", 0.3)
     
 
 
-    print("######################")
-    with open('output.json', 'w') as f:
+    with open('output_board_states2.json', 'w') as f:
         f.write(str(agent.board_states2))
-    #print(agent.board_states2)
+
+    with open('output_board_states1.json', 'w') as f:
+        f.write(str(agent.board_states1))
+    
 
     with open('winner.txt', 'w') as f:
         f.write(str(agent.winners_list))
 
-    # agent.play(42, "learning_agent1", "user", 1)
-    #agent.play(51, "user", "learning_agent2", 1)
 
-  
-  
+    agent.play(51, "user", "learning_agent2", 0)
+    agent.play(51, "learning_agent1", "user", 0)
 
