@@ -36,6 +36,6 @@ plt.ylabel('Number of Wins')
 plt.xlabel('Number of Games')
 plt.title('Learning Agent player0 VS Learning Agent player1')
 plt.legend()
-plt.savefig('foo.png')
+plt.savefig('plot.png')
 plt.show()
 

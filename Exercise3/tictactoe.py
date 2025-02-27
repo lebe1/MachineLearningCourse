@@ -2,8 +2,9 @@ import numpy as np
 import random 
 
 DRAW_VALUE_FIRST_PLAYER = 0.1
-DRAW_VALUE_SECOND_PLAYER = 0.4
+DRAW_VALUE_SECOND_PLAYER = 0.6
 VALUE_THRESHOLD = 0.001
+ALPHA = 0.5
 
 class TicTacToeAgent():
     def __init__(self):
@@ -15,7 +16,6 @@ class TicTacToeAgent():
         self.history = list()
         self.board_states1={}
         self.board_states2={}
-        self.alpha=0.5
         self.winners_list=list()
 
     def random_move(self, player, seed):
@@ -200,10 +200,10 @@ class TicTacToeAgent():
             restored_matrix.append(int(letter))
 
         restored_matrix = np.array(restored_matrix).reshape(3, 3)
-        print("RESTORED MATRIX")
-        print(restored_matrix)
-        print("ROTATED MATRIX")
-        print(np.rot90(restored_matrix,number_of_rotations))
+        # print("RESTORED MATRIX")
+        # print(restored_matrix)
+        # print("ROTATED MATRIX")
+        # print(np.rot90(restored_matrix,number_of_rotations))
 
         rotated_state = ','.join(str(int(num)) for row in np.rot90(restored_matrix,number_of_rotations) for num in row)
 
@@ -228,14 +228,11 @@ class TicTacToeAgent():
 
             # Check if current state has been played before by rotating it
             for i in range(1,4):
-                print("ROTATE RESTORED MATRIX ", np.rot90(restored_matrix,i))
                 rotated_state = ','.join(str(int(num)) for row in np.rot90(restored_matrix,i) for num in row)
                 if board_states.get(rotated_state) is not None:
-                    print("Found a state by rotating RESTORED MATRIX", i)
                     return i
                 
         # If no state has ever been played return 0 
-        print("NO state has ever been played#################")
         return 0
         
 
@@ -250,31 +247,19 @@ class TicTacToeAgent():
         number_of_rotations = self.check_necessary_rotations(board_states)
         
         for index, state in enumerate(reversed(self.history)):
-            print("State before rotation", state)
 
             # Only rotate the game states if
             if number_of_rotations != 0:
-                state = self.rotate_state_for_history(state, number_of_rotations)
-
-            print("State after rotation", state)
-            
+                state = self.rotate_state_for_history(state, number_of_rotations)         
             
             if board_states.get(state) is None:
-                print("STATE HAS NEVER BEEN PLAYED BEFORE")
-                board_states[state] = {'value': 0, 'next_states': set()}
+                board_states[state] = {'value': 0.5, 'next_states': set()}
             
             if index == 0:
-                print("INDEX == 0")
-                print("Value beginning INDEX", board_states[state]['value'])
-                print("Winner INDEX", self.winner)
                 board_states[state]['value'] = draw_value if self.winner == 0.5 else (self.winner if is_player1 else (0 if self.winner == 1 else 1))
-                print("Value afterwards INDEX", board_states[state]['value'])
-
             else:
-                print("Value beginning", board_states[state]['value'])
-                board_states[state]['value'] += self.alpha * (board_states[old_state]['value'] - board_states[state]['value'])
+                board_states[state]['value'] += ALPHA * (board_states[old_state]['value'] - board_states[state]['value'])
                 board_states[state]['next_states'].add(old_state)
-                print("Value afterwards", board_states[state]['value'])
             
             
             old_state = state
@@ -380,7 +365,7 @@ if __name__ == "__main__":
     for seed in random_seed_list:
         print("SEED",seed)
         
-        agent.play(seed, "learning_agent1", "learning_agent2", 0.3)
+        agent.play(seed, "learning_agent1", "learning_agent2", 0.1)
     
 
 
