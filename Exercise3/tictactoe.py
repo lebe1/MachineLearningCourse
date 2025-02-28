@@ -100,7 +100,7 @@ class TicTacToeAgent():
             self.winner = self.checkState(player)
         
         if len(empty_cells) == 0:
-            print("It's a (potential) draw")
+            print("It's a draw")
             self.EndFlag = True
 
     def checkState(self, player):  
@@ -558,6 +558,6 @@ if __name__ == "__main__":
         f.write(str(agent.winners_list))
 
 
-    agent.play(51, "user", "learning_agent2", 0)
     agent.play(51, "learning_agent1", "user", 0)
+    # agent.play(51, "user", "learning_agent2", 0)
 
