@@ -5,7 +5,7 @@ DRAW_VALUE_FIRST_PLAYER = 0.1
 DRAW_VALUE_SECOND_PLAYER = 0.6
 VALUE_THRESHOLD = 0.001
 LEARNING_RATE = 0.5
-EXPLORATION_RATE = 0.1
+EXPLORATION_RATE = 0.3
 RANDOM_SEED = 67
 NUMBER_OF_ITERATIONS = 10000
 
@@ -341,5 +341,5 @@ if __name__ == "__main__":
 
 
     agent.play(51, "user", "learning_agent2", 0)
-    # agent.play(51, "learning_agent1", "user", 0)
+    agent.play(51, "learning_agent1", "user", 0)
 
