@@ -10,18 +10,57 @@ RANDOM_SEED = 67
 NUMBER_OF_ITERATIONS = 10000
 
 class TicTacToeAgent():
+    """
+    A class representing an AI agent for the game of Tic-Tac-Toe.
+
+    Attributes:
+        board (np.ndarray): A 3x3 numpy array representing the game board.
+        player0 (int): Value representing player 0 (default: -1).
+        player1 (int): Value representing player 1 (default: 1).
+        EndFlag (bool): A flag indicating whether the game has ended.
+        winner (int): The winner of the game (0 if no winner, -1 for player 0, 1 for player 1).
+        history (list): A list tracking the history of moves made in the game.
+        board_states1 (dict): A dictionary to store board states for player 1.
+        board_states2 (dict): A dictionary to store board states for player 2.
+        winners_list (list): A list to keep track of winners across multiple games.
+    """
+
     def __init__(self):
+        """
+        Initializes a new TicTacToeAgent instance.
+
+        The game board is initialized as a 3x3 grid of zeros, representing empty spaces.
+        Player markers are set as -1 for player 0 and 1 for player 1.
+        Other attributes track the game state, history, and winners.
+        """
         self.board = np.zeros((3, 3))
         self.player0 = -1
         self.player1 = 1
         self.EndFlag = False
         self.winner = 0
         self.history = list()
-        self.board_states1={}
-        self.board_states2={}
-        self.winners_list=list()
+        self.board_states1 = {}
+        self.board_states2 = {}
+        self.winners_list = list()
+
 
     def random_move(self, player, seed):
+        """
+        Makes a random move for the given player.
+
+        This method selects a random empty cell on the board and places the player's marker there.
+        It also updates the game history and checks if a winner exists when fewer than five cells remain.
+
+        Args:
+            player (int): The player's identifier (-1 for player 0, 1 for player 1).
+            seed (int): The seed value for the random number generator to ensure reproducibility.
+
+        Updates:
+            - Adds the current board state to the history.
+            - Places the player's move on a randomly chosen empty cell.
+            - Checks for a winner when fewer than five cells remain.
+            - Sets `EndFlag` to True if the board is full, indicating a draw.
+        """
 
         # Get empty cells not being played yet
         empty_cells = np.argwhere(self.board == 0)
@@ -34,69 +73,68 @@ class TicTacToeAgent():
         random_index = random.choices(empty_cells)
         self.board[random_index[0][0]][random_index[0][1]] = player
 
+        self.check_game_state(player)
+
+    def check_game_state(self, player):
+        """
+        Checks the current state of the game after a player's move.
+
+        This method evaluates the game board to determine if a player has won or if the game has ended in a draw.
+        It is triggered after a move is made and updates the game state accordingly.
+
+        Args:
+            player (int): The player's identifier (-1 for player 0, 1 for player 1).
+
+        Updates:
+            - Checks for a winner if fewer than five empty cells remain.
+            - Sets `winner` if a player wins the game.
+            - Marks `EndFlag` as True if the board is full, indicating a draw.
+        """
+
         # Update empty cells after placing the move
         empty_cells = np.argwhere(self.board == 0)
 
-        # When only 5 cells are left, first player is able to win, so we check for it
+        # When only 5 cells are left, the first player can win, so we check for it
         if len(empty_cells) < 5: 
-           print("Entering empty cells < 5", empty_cells)
-           self.winner = self.checkState(player)
+            print("Entering empty cells < 5", empty_cells)
+            self.winner = self.checkState(player)
         
         if len(empty_cells) == 0:
             print("It's a (potential) draw")
             self.EndFlag = True
 
+    def checkState(self, player):  
+        """
+        Evaluates the current board state to determine if a player has won.
 
-    def manual_move(self, player, user_input_row, user_input_col):
+        This method checks for winning conditions by summing up values across rows, columns, and diagonals.
+        If a player wins, the `EndFlag` is set to True, and the winning player is returned.
+        If no winner is found, the method returns 0.5, indicating the game is still ongoing.
 
-        self.history.append(','.join(str(int(num)) for row in self.board for num in row))
+        Args:
+            player (int): The player's identifier (-1 for player 0, 1 for player 1).
 
-        # only place user marker when input position is valid (matrix empty at that position)
-        while (self.board[user_input_row][user_input_col] != 0):
-            print("Input invalid. Please choose a valid position for your marker.")
-            user_input_row = int(input("Enter row number [0, 1, 2]: "))
-            user_input_col = int(input("Enter column number [0, 1, 2]: "))
-        
-        self.board[user_input_row][user_input_col] = player
+        Returns:
+            int: 0 if player 1 (-1) wins, 1 if player 2 (1) wins, or 0.5 if no winner is determined.
 
-        empty_cells = np.argwhere(self.board == 0)
-
-        # check if there's a winner
-        if len(empty_cells) < 5: 
-           self.winner = self.checkState(player)
-
-        # check if there's a draw
-        # EndFlag = True twice if last move was winning move
-        if len(empty_cells) == 0:
-            print("It's a (potential) draw")
-            self.EndFlag = True
-
-
-
-    def placement(self, player, new_state):
-        self.history.append(','.join(str(int(num)) for row in self.board for num in row))
-        
-        self.board = new_state
-
-        empty_cells = np.argwhere(self.board == 0)
-        if len(empty_cells) < 5: 
-           self.winner = self.checkState(player)
-        
-
-        
-
-    def checkState(self, player):       
-        # 1. Check: Sum up all horizontally
+        Updates:
+            - Checks horizontal, vertical, and diagonal sums for a winning condition.
+            - Sets `EndFlag` to True if a win is detected.
+        """     
+    
+        # 1. Check: Sum up all values horizontally
         for i in range(3):
             if sum(self.board[i, :]) in [3, -3]:
                 print(f"Player {player} won horizontally")
                 self.EndFlag = True
                 return 0 if player == 1 else 1
+            # 2. Check: Sum up all values vertically
             elif sum(self.board[:, i]) in [3, -3]:
                 print(f"Player {player} won vertically")
                 self.EndFlag = True
                 return 0 if player == 1 else 1
-        
+
+        # 3. Check: Sum up all values in both diagonals
         if sum(self.board.diagonal()) in [3, -3]:
             print(f"Player {player} won diagonally left top to bottom right")
             self.EndFlag = True
@@ -105,12 +143,72 @@ class TicTacToeAgent():
             print(f"Player {player} won diagonally right top to bottom left")
             self.EndFlag = True
             return 0 if player == 1 else 1
-        
-        empty_cells = np.argwhere(self.board == 0)
-        if len(empty_cells) == 0:
-            self.EndFlag = True
 
         return 0.5
+
+
+
+
+    def manual_move(self, player, user_input_row, user_input_col):
+        """
+        Allows a player to manually place a move on the Tic-Tac-Toe board.
+
+        This method takes user input for a move and ensures the chosen position is valid.
+        If the input position is already occupied, the user is prompted to enter a new one.
+        The move is then recorded on the board, and the game state is updated accordingly.
+
+        Args:
+            player (int): The player's identifier (-1 for player 0, 1 for player 1).
+            user_input_row (int): The row index (0, 1, or 2) where the player wants to place their marker.
+            user_input_col (int): The column index (0, 1, or 2) where the player wants to place their marker.
+
+        Updates:
+            - Adds the current board state to the history.
+            - Ensures the selected move is placed in a valid, empty cell.
+            - Checks if a player has won when fewer than five empty cells remain.
+            - Sets `EndFlag` to True if the board is full, indicating a draw.
+        """
+
+        self.history.append(','.join(str(int(num)) for row in self.board for num in row))
+
+        # Only place user marker when input position is valid (matrix empty at that position)
+        while self.board[user_input_row][user_input_col] != 0:
+            print("Input invalid. Please choose a valid position for your marker.")
+            user_input_row = int(input("Enter row number [0, 1, 2]: "))
+            user_input_col = int(input("Enter column number [0, 1, 2]: "))
+
+        self.board[user_input_row][user_input_col] = player
+
+        self.check_game_state(player)
+
+
+
+    def placement(self, player, new_state):
+        """
+        Updates the game board with a new state for a given player.
+
+        This method replaces the current board state with a new one and updates the game history.
+        It also checks if there is a winner when fewer than five empty cells remain.
+
+        Args:
+            player (int): The player's identifier (-1 for player 0, 1 for player 1).
+            new_state (np.ndarray): A 3x3 numpy array representing the new board state.
+
+        Updates:
+            - Adds the previous board state to the history.
+            - Replaces the current board with `new_state`.
+            - Checks if a player has won when fewer than five empty cells remain.
+        """
+
+        self.history.append(','.join(str(int(num)) for row in self.board for num in row))
+
+        self.board = new_state
+
+        self.check_game_state(player)
+
+        
+
+
   
 
     def explore_move(self, player_name, seed, exploration_rate):
