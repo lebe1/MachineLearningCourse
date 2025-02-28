@@ -147,8 +147,6 @@ class TicTacToeAgent():
         return 0.5
 
 
-
-
     def manual_move(self, player, user_input_row, user_input_col):
         """
         Allows a player to manually place a move on the Tic-Tac-Toe board.
@@ -205,33 +203,27 @@ class TicTacToeAgent():
         self.board = new_state
 
         self.check_game_state(player)
-
         
 
-
-  
-
-    def explore_move(self, player_name, seed, exploration_rate):
-        np.random.seed(seed)
-        random_uniform = np.random.uniform(low=0, high=1)
-        if random_uniform <= exploration_rate:
-            # random move
-            if "1" in player_name:
-                print("Entering random uniform, now doing random move")
-                self.random_move(-1, seed)
-            else:
-                self.random_move(1, seed)
-            print("RANDOM UNIFORM")
-
-            return np.zeros((3,3))
-
-        else:
-            if "1" in player_name: 
-                return self.choose_greedy_move(self.board_states1, -1, seed)
-            else:
-                return self.choose_greedy_move(self.board_states2, 1, seed)
-
     def rotate_current_state_for_placing(self, board_states):
+        """
+        Checks if the current board state has been encountered before, considering rotations.
+
+        This method generates the hashed representation of the current board state and checks 
+        if it exists in the `board_states` dictionary. If not found, it iterates through 
+        90-degree rotations to find a match. If no match is found, it returns an indicator 
+        that the state is new.
+
+        Args:
+            board_states (dict): A dictionary mapping hashed board states to their values.
+
+        Returns:
+            tuple:
+                - int: The number of 90-degree rotations (0, 1, 2, or 3) needed to match a known state, 
+                    or -1 if the state is new.
+                - str: The hashed representation of the matched or new board state.
+        """
+        
         beginning_state = ','.join(str(int(num)) for row in self.board for num in row)
 
         # Check if current state has been played before by rotating it
@@ -248,38 +240,69 @@ class TicTacToeAgent():
 
             
     def choose_greedy_move(self, board_states, player_score, seed):
-            
-            # greedy move according to best value
-            best_value = -1
-            best_state = ""
+        """
+        Selects the next move using a greedy policy based on learned state values.
 
-            
-            number_of_rotations, current_state = self.rotate_current_state_for_placing(board_states)
+        This method determines the best possible move by choosing the state with the highest 
+        value from the set of known next states. If no known states exist, or if the best 
+        value is below a predefined threshold, the method falls back to a random move.
 
-            print("CHECK ",board_states.get(current_state))
-            # make random move if the current state hasn't been encountered yet
-            if board_states.get(current_state) is None and number_of_rotations == -1:
+        Args:
+            board_states (dict): A dictionary mapping hashed board states to their values 
+                                and possible next states.
+            player_score (int): The score representation of the player (-1 for player 1, 1 for player 2).
+            seed (int): A seed value for reproducibility in random move selection.
+
+        Returns:
+            np.ndarray: A 3x3 NumPy array representing the chosen board state after the move.
+                        Returns a zero matrix if a random move is made.
+        """
+
+
+        # greedy move according to best value
+        best_value = -1
+        best_state = ""
+
+        
+        number_of_rotations, current_state = self.rotate_current_state_for_placing(board_states)
+
+        print("CHECK ",board_states.get(current_state))
+        # make random move if the current state hasn't been encountered yet
+        if board_states.get(current_state) is None and number_of_rotations == -1:
+            self.random_move(player_score, seed)
+            return np.zeros((3,3))
+        else:
+            for next_state in board_states[current_state]["next_states"]:
+                if (board_states[next_state]["value"] > best_value):
+                    best_state = next_state
+                    best_value = board_states[next_state]["value"]
+
+            # Set threshold to make sure, we do not repeat playing loosing games
+            if best_value < VALUE_THRESHOLD:
                 self.random_move(player_score, seed)
                 return np.zeros((3,3))
-            else:
-                for next_state in board_states[current_state]["next_states"]:
-                    if (board_states[next_state]["value"] > best_value):
-                        best_state = next_state
-                        best_value = board_states[next_state]["value"]
 
-                # Set threshold to make sure, we do not repeat playing loosing games
-                if best_value < VALUE_THRESHOLD:
-                   self.random_move(player_score, seed)
-                   return np.zeros((3,3))
+        matrix_best_state = self.restore_matrix_from_hashed_state(best_state)
 
-            matrix_best_state = self.restore_matrix_from_hashed_state(best_state)
-
-            # Rotate matrix back i.e. take absolute value of - 4 to have a 360° rotation 
-            matrix_best_state_original_rotation = np.rot90(matrix_best_state, abs(number_of_rotations-4))
-            return matrix_best_state_original_rotation
+        # Rotate matrix back i.e. take absolute value of - 4 to have a 360° rotation 
+        matrix_best_state_original_rotation = np.rot90(matrix_best_state, abs(number_of_rotations-4))
+        return matrix_best_state_original_rotation
         
 
     def restore_matrix_from_hashed_state(self, state):
+        """
+        Converts a hashed board state back into a 3x3 NumPy matrix.
+
+        The hashed state is a string representation where board values are stored 
+        as comma-separated integers. This method splits the string, converts 
+        the values to integers, and reshapes them into a 3x3 matrix.
+
+        Args:
+            state (str): The hashed board state as a comma-separated string.
+
+        Returns:
+            np.ndarray: A 3x3 NumPy array representing the Tic-Tac-Toe board.
+        """
 
         restored_matrix = []
 
@@ -292,7 +315,22 @@ class TicTacToeAgent():
 
         return restored_matrix     
 
+
     def rotate_state_for_history(self, state, number_of_rotations):
+        """
+        Rotates a given board state by a specified number of 90-degree increments.
+
+        This method restores the board state from its hashed representation, applies 
+        the given number of 90-degree rotations, and then converts it back into a 
+        hashed state format.
+
+        Args:
+            state (str): The hashed representation of the board state.
+            number_of_rotations (int): The number of 90-degree rotations to apply (1, 2, or 3).
+
+        Returns:
+            str: The rotated board state in hashed format.
+        """
 
         restored_matrix = self.restore_matrix_from_hashed_state(state)
 
@@ -300,7 +338,23 @@ class TicTacToeAgent():
 
         return rotated_state
     
+
     def check_necessary_rotations(self, board_states):
+        """
+        Determines the number of 90-degree rotations needed to match a previously seen board state.
+
+        This method checks if any of the states in the game history have been encountered 
+        before in the `board_states` dictionary. If a state is found in its original or 
+        rotated form, it returns the number of rotations required to match it.
+
+        Args:
+            board_states (dict): A dictionary mapping board states to their values.
+
+        Returns:
+            int: The number of 90-degree rotations (1, 2, or 3) needed to match a known state, 
+                or 0 if no match is found.
+        """
+        
         for index, state in enumerate(self.history):
             if index == 0:
                 continue
@@ -321,6 +375,18 @@ class TicTacToeAgent():
         
 
     def calculate_state_values(self, player_name):
+        """
+        Updates the state-value estimates for a reinforcement learning agent.
+
+        This method updates the value of each game state encountered during the match 
+        using the temporal-difference learning method. It applies a reward at the final state based on 
+        the game outcome and then propagates the value updates backward through the 
+        game history.
+
+        Args:
+            player_name (str): The identifier for the learning agent (e.g., "learning_agent1", "learning_agent2").
+        """
+
         is_player1 = "1" in player_name
         board_states = self.board_states1 if is_player1 else self.board_states2
         draw_value = DRAW_VALUE_FIRST_PLAYER if is_player1 else DRAW_VALUE_SECOND_PLAYER
@@ -345,8 +411,44 @@ class TicTacToeAgent():
             
 
     def learning_agent_move(self, player_name, exploration_rate, seed):
+        """
+        Executes a move for a reinforcement learning agent.
 
-        new_state = self.explore_move(player_name, seed, exploration_rate)
+        The agent selects its move based on an exploration-exploitation trade-off:
+        - With probability `exploration_rate`, the agent makes a random move.
+        - Otherwise, it selects the best-known move using a greedy approach.
+        
+        If no valid learned move is available, the agent falls back to a random move.
+
+        Args:
+            player_name (str): The identifier for the learning agent (e.g., "learning_agent1", "learning_agent2").
+            exploration_rate (float): The probability of making a random move instead of the best-known move.
+            seed (int): A seed value for reproducibility in random move selection.
+
+        Returns:
+            int: Returns 0 if the agent had to resort to a random move.
+        """
+
+
+        np.random.seed(seed)
+        random_uniform = np.random.uniform(low=0, high=1)
+        if random_uniform <= exploration_rate:
+            # random move
+            if "1" in player_name:
+                print("Entering random uniform, now doing random move")
+                self.random_move(-1, seed)
+            else:
+                self.random_move(1, seed)
+            print("RANDOM UNIFORM")
+
+            new_state = np.zeros((3,3))
+
+        else:
+            if "1" in player_name: 
+                new_state = self.choose_greedy_move(self.board_states1, -1, seed)
+            else:
+                new_state = self.choose_greedy_move(self.board_states2, 1, seed)
+
         
         # Catch case of all zero matrix meaning a random move had to be drawn
         if np.all(new_state == 0):
@@ -359,6 +461,24 @@ class TicTacToeAgent():
         
 
     def play(self,seed, player1, player2, exploration_rate):
+        """
+        Simulates a game of Tic-Tac-Toe between two players.
+
+        This method alternates turns between player1 and player2 for up to 10 moves, checking 
+        for a game-ending condition after each move. It supports three types of players: 
+        - A random agent that makes random moves.
+        - A user who provides manual input.
+        - A reinforcement learning agent that makes strategic moves based on learned policies.
+
+        If a learning agent is involved, it updates its state values at the end of the game.
+
+        Args:
+            seed (int): A seed value used for random move generation to ensure reproducibility.
+            player1 (str): Specifies the type of the first player ("random_agent1", "user", "learning_agent1").
+            player2 (str): Specifies the type of the second player ("random_agent2", "user", "learning_agent2").
+            exploration_rate (float): The exploration rate used by learning agents to balance exploration and exploitation.
+        """
+
         for i in range(10):
             if self.EndFlag:
                 self.history.append(','.join(str(int(num)) for row in self.board for num in row))
